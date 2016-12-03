@@ -1,0 +1,1121 @@
+package de.drazil.snatchfreezer;
+
+import java.io.File;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ResourceBundle;
+
+import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellEditEvent;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.stage.FileChooser;
+import javafx.util.converter.IntegerStringConverter;
+import javafx.util.converter.LongStringConverter;
+import jssc.SerialPort;
+import jssc.SerialPortEvent;
+import jssc.SerialPortEventListener;
+import jssc.SerialPortList;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import de.drazil.snatchfreezer.model.ActionBean;
+import de.drazil.snatchfreezer.model.ActionItemBean;
+import de.drazil.snatchfreezer.model.ActionPinBean;
+import de.drazil.snatchfreezer.model.ConfigurationBean;
+import de.drazil.util.ArrayUtil;
+import de.drazil.util.NumericConverter;
+import de.drazil.util.TextfieldUtil;
+
+public class SnatchFreezerController implements Initializable
+{
+
+	private final static int TABLE_MAX_ROWS = 5;
+
+	// cccccccttt-llllllllll-dddddddddd...
+	// type = ttt
+	// 00 000000 = no parameter
+	// 10 000000 = string
+	// 11 000000 = number
+	// command = cccccc
+	// 000001 = add action
+	// 000010 = set action pin
+	// 000011 = add action timing
+	// 000100 = set action delay time
+	// 000101 = set action release time
+	// 000110 = set cycle count
+	// 000111 = set cycle delay
+	// 100000 = run
+	// 100010 = cancel
+	// 100011 = echo
+	// 100100 = debug
+	// 111000 = error
+	// 111100 = reset
+
+	// llllllll = length
+
+	
+	private final static int PARAMETER_NO = 0b00000000;
+	private final static int PARAMETER_STRING = 0b10000000;
+	private final static int PARAMETER_NUMBER = 0b11000000;
+	private final static int SYNCBYTE1 = 0xaa;
+	private final static int SYNCBYTE2 = 0x55;
+	private final static int XCOMMAND_RUN = 0b00100000;
+	private final static int XCOMMAND_CANCEL = 0b00100010;
+	private final static int XCOMMAND_ECHO = 0b10100011;
+	private final static int XCOMMAND_DEBUG = 0b10100100;
+	private final static int XCOMMAND_ERROR = 0b11111000;
+	private final static int XCOMMAND_RESET = 0b00111100;
+	private final static int XCOMMAND_ADD_ACTION = 0b11000001;
+	private final static int XCOMMAND_ADD_ACTION_TIMING = 0b00000011;
+	private final static int XCOMMAND_SET_ACTION_DELAY_TIME = 0b11000100;
+	private final static int XCOMMAND_SET_ACTION_RELEASE_TIME = 0b11000101;
+	private final static int XCOMMAND_SET_CYCLE_COUNT = 0b11000110;
+	private final static int XCOMMAND_SET_CYCLE_DELAY = 0b11000111;
+	private final static int FINAL_BYTE = 0b11111111;
+	
+	private final static int READ_DATA_PREFIX = 10;
+	private final static int READ_COMMAND = 20;
+	private final static int READ_LENGTH = 30;
+	private final static int READ_DATA = 40;
+	private final static int EXECUTE_COMMAND = 50;
+
+	// private final static int READ_DATA_NEXT = 50;
+	private final static int COMMAND_RESET = 0;
+	private final static int COMMAND_GET_NEXT_DATA_RECEIVED = 200;
+	private final static int COMMAND_CONFIGURE_RECEIVED = 300;
+	private final static int COMMAND_FINISHED_RECEIVED = 400;
+	private final static int COMMAND_DISPLAY_VALUE_RECEIVED = 500;
+	private final static int COMMAND_COUNTCYCLE_RECEIVED = 600;
+	private int syncCount = 0;
+	private boolean prefixSynced = false;
+	private boolean suffixSynced = false;
+	private int phase;
+	private int serialCommand;
+	private int value;
+	private List<byte[]> dataList = null;
+	private Iterator<byte[]> dataIterator;
+	private int count;
+	private int dataIndex;
+	private byte dataBuffer[] = new byte[] { 0, 0, 0, 0 };
+	private byte readDataBuffer[] = null;
+	private File file = null;
+	private int progressCount;
+	private String actionButtonText = "Action";
+	private int cycleCount = 0;
+	private int dataLength = 0;
+	private int currentCommand = 0;
+	private boolean commandReady = false;
+
+	@FXML
+	private MenuBar menubar;
+	@FXML
+	private ChoiceBox<String> serialSelectChoiceBox;
+	@FXML
+	private Button actionButton;
+	@FXML
+	private Button loadButton;
+	@FXML
+	private Button saveButton;
+	@FXML
+	private Button saveAsButton;
+	@FXML
+	private TableView<ActionItemBean> valve1Grid;
+	@FXML
+	private TableView<ActionItemBean> valve2Grid;
+	@FXML
+	private TableView<ActionItemBean> valve3Grid;
+	@FXML
+	private TableView<ActionItemBean> valve4Grid;
+	@FXML
+	private Button valve1ClearButton;
+	@FXML
+	private Button valve2ClearButton;
+	@FXML
+	private Button valve3ClearButton;
+	@FXML
+	private Button valve4ClearButton;
+	@FXML
+	private Button valve1AddButton;
+	@FXML
+	private Button valve2AddButton;
+	@FXML
+	private Button valve3AddButton;
+	@FXML
+	private Button valve4AddButton;
+	@FXML
+	private Button valve1RemoveButton;
+	@FXML
+	private Button valve2RemoveButton;
+	@FXML
+	private Button valve3RemoveButton;
+	@FXML
+	private Button valve4RemoveButton;
+	@FXML
+	private ComboBox<ActionPinBean> action1Pin;
+	@FXML
+	private ComboBox<ActionPinBean> action2Pin;
+	@FXML
+	private ComboBox<ActionPinBean> action3Pin;
+	@FXML
+	private ComboBox<ActionPinBean> action4Pin;
+	@FXML
+	private TextField cameraTriggerDelayTextField;
+	@FXML
+	private TextField cameraTriggerReleaseTextField;
+	@FXML
+	private Button cameraTriggerTestButton;
+	@FXML
+	private TextField flash1TriggerDelayTextField;
+	@FXML
+	private TextField flash2TriggerDelayTextField;
+	@FXML
+	private Button flash1TriggerTestButton;
+	@FXML
+	private Button flash2TriggerTestButton;
+	@FXML
+	private TextArea note;
+	@FXML
+	private Label filename;
+	@FXML
+	private TextField cyclesTextField;
+	@FXML
+	private TextField cycleDelayTextField;
+	@FXML
+	private ProgressBar progressBar;
+
+	private SerialPort serialPort;
+	private String[] portNames;
+	private ObservableList<ActionItemBean> valve1List;
+	private ObservableList<ActionItemBean> valve2List;
+	private ObservableList<ActionItemBean> valve3List;
+	private ObservableList<ActionItemBean> valve4List;
+
+	private String ttyDevice = null;
+
+	/*
+	 * private FilteredList<ActionPinBean> action1FiltertedList; private
+	 * FilteredList<ActionPinBean> action2FiltertedList; private
+	 * FilteredList<ActionPinBean> action3FiltertedList; private
+	 * FilteredList<ActionPinBean> action4FiltertedList;
+	 */
+	@Override
+	public void initialize(URL arg0, ResourceBundle arg1)
+	{
+		initialzeSerialPortSelector();
+		initializeSerialConnection();
+		initializeUi();
+	}
+
+	private void buildData()
+	{
+		dataList = new ArrayList<byte[]>();
+		sendReset();
+
+	}
+
+	private void sendEcho(String text)
+	{
+		byte[] ba = NumericConverter.toByteArray(XCOMMAND_ECHO);
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) text.length()));
+		ba = ArrayUtil.add(ba, ArrayUtil.getByteArrayFromString(text));
+		dataList.add(getDataBlock(ba));
+	}
+
+	private void sendRun()
+	{
+		dataList.add(getDataBlock(NumericConverter.toByteArray(XCOMMAND_RUN, 1)));
+	}
+
+	private void sendCancel()
+	{
+		dataList.add(getDataBlock(NumericConverter.toByteArray(XCOMMAND_CANCEL, 1)));
+	}
+
+	private void sendReset()
+	{
+		dataList.add(getDataBlock(NumericConverter.toByteArray(XCOMMAND_RESET, 1)));
+	}
+
+	public void sendAddActionPin(int pin)
+	{
+		byte[] ba = NumericConverter.toByteArray(XCOMMAND_ADD_ACTION);
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 1));
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(pin, 1));
+		dataList.add(getDataBlock(ba));
+	}
+
+	public void sendAddActionTiming(long startDelay, long releaseDelay)
+	{
+		byte ba[] = getDataBlock(NumericConverter.toByteArray(XCOMMAND_ADD_ACTION_TIMING));
+		ba = NumericConverter.toByteArray(XCOMMAND_SET_ACTION_DELAY_TIME);
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 4));
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(startDelay));
+		dataList.add(getDataBlock(ba));
+		ba = NumericConverter.toByteArray(XCOMMAND_SET_ACTION_RELEASE_TIME);
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 4));
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(startDelay));
+		dataList.add(getDataBlock(ba));
+	}
+
+	public void setCycleCount(int cycleCount)
+	{
+		byte[] ba = NumericConverter.toByteArray(XCOMMAND_SET_CYCLE_COUNT);
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 1));
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(cycleCount));
+		dataList.add(getDataBlock(ba));
+	}
+
+	public void setCycleDelay(long cycleDelay)
+	{
+		byte[] ba = NumericConverter.toByteArray(XCOMMAND_SET_CYCLE_DELAY);
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 4));
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(cycleDelay));
+		dataList.add(getDataBlock(ba));
+	}
+
+	/*
+	 * private void buildData() { int size = 0; dataList = new ArrayList<>();
+	 * dataList
+	 * .add(getDataBlock(NumericConverter.toByteArray(TextfieldUtil.getLongValue
+	 * (cyclesTextField), 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray
+	 * (TextfieldUtil.getLongValue(cycleDelayTextField), 4)));
+	 * dataList.add(getDataBlock
+	 * (NumericConverter.toByteArray(TextfieldUtil.getLongValue
+	 * (cameraTriggerDelayTextField), 4)));
+	 * dataList.add(getDataBlock(NumericConverter
+	 * .toByteArray(TextfieldUtil.getLongValue(cameraTriggerReleaseTextField),
+	 * 4))); dataList.add(getDataBlock(NumericConverter.toByteArray(TextfieldUtil
+	 * .getLongValue(flash1TriggerDelayTextField), 4))); dataList.add(getDataBlock
+	 * (NumericConverter.toByteArray(TextfieldUtil.getLongValue
+	 * (flash2TriggerDelayTextField), 4)));
+	 * 
+	 * // valve1 dataList.add(getDataBlock(NumericConverter.toByteArray(action1Pin
+	 * .getValue().getPin(), 1))); size = valve1List.size();
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int
+	 * i = 0; i < size; i++) { ActionItemBean bean = valve1List.get(i);
+	 * 
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(),
+	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
+	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
+	 * 1))); }
+	 * 
+	 * // filler for (int i = 0; i < TABLE_MAX_ROWS - size; i++) {
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); }
+	 * 
+	 * // valve2 dataList.add(getDataBlock(NumericConverter.toByteArray(action2Pin
+	 * .getValue().getPin(), 1))); size = valve2List.size();
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int
+	 * i = 0; i < size; i++) { ActionItemBean bean = valve2List.get(i);
+	 * 
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(),
+	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
+	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
+	 * 1))); } // filler for (int i = 0; i < TABLE_MAX_ROWS - size; i++) {
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); } // valve3
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(action3Pin.getValue
+	 * ().getPin(), 1))); size = valve3List.size();
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int
+	 * i = 0; i < size; i++) { ActionItemBean bean = valve3List.get(i);
+	 * 
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(),
+	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
+	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
+	 * 1))); } // filler for (int i = 0; i < TABLE_MAX_ROWS - size; i++) {
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); } // valve4
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(action4Pin.getValue
+	 * ().getPin(), 1))); size = valve4List.size();
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int
+	 * i = 0; i < size; i++) { ActionItemBean bean = valve4List.get(i);
+	 * 
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(),
+	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
+	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
+	 * 1))); } // filler for (int i = 0; i < TABLE_MAX_ROWS - size; i++) {
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); }
+	 * 
+	 * dataList.add(getFinalBlock()); }
+	 */
+	private void setConfiguration(ConfigurationBean configurationBean)
+	{
+		valve1List = valve1Grid.getItems();
+		valve2List = valve2Grid.getItems();
+		valve3List = valve3Grid.getItems();
+		valve4List = valve4Grid.getItems();
+
+		valve1List.clear();
+		valve2List.clear();
+		valve3List.clear();
+		valve4List.clear();
+
+		valve1List.addAll(configurationBean.getValve1ActionBean().getActionItemList());
+		valve2List.addAll(configurationBean.getValve2ActionBean().getActionItemList());
+		valve3List.addAll(configurationBean.getValve3ActionBean().getActionItemList());
+		valve4List.addAll(configurationBean.getValve4ActionBean().getActionItemList());
+
+		action1Pin.setValue(action1Pin.getItems().get(configurationBean.getValve1ActionBean().getPinIndex()));
+		action2Pin.setValue(action2Pin.getItems().get(configurationBean.getValve2ActionBean().getPinIndex()));
+		action3Pin.setValue(action3Pin.getItems().get(configurationBean.getValve3ActionBean().getPinIndex()));
+		action4Pin.setValue(action4Pin.getItems().get(configurationBean.getValve4ActionBean().getPinIndex()));
+
+		cameraTriggerDelayTextField.setText(String.valueOf(configurationBean.getCameraActionBean().getActionItemList().get(0).getDelay()));
+		cameraTriggerReleaseTextField.setText(String.valueOf(configurationBean.getCameraActionBean().getActionItemList().get(0).getRelease()));
+
+		flash1TriggerDelayTextField.setText(String.valueOf(configurationBean.getFlash1ActionBean().getActionItemList().get(0).getDelay()));
+		flash2TriggerDelayTextField.setText(String.valueOf(configurationBean.getFlash2ActionBean().getActionItemList().get(0).getDelay()));
+
+		cyclesTextField.setText(String.valueOf(configurationBean.getCycles()));
+		cycleDelayTextField.setText(String.valueOf(configurationBean.getCycleDelay()));
+
+		note.setText(configurationBean.getNote());
+
+	}
+
+	private ConfigurationBean getConfiguration()
+	{
+		ConfigurationBean configurationBean = new ConfigurationBean();
+		configurationBean.setNote(note.getText());
+
+		configurationBean.setCycles(TextfieldUtil.getLongValue(cyclesTextField));
+		configurationBean.setCycleDelay(TextfieldUtil.getLongValue(cycleDelayTextField));
+
+		ActionBean cameraActionBean = new ActionBean();
+		cameraActionBean.setPinIndex(0);
+		List<ActionItemBean> cameraActionItemBeanList = new ArrayList<>();
+		cameraActionItemBeanList.add(new ActionItemBean(true, TextfieldUtil.getLongValue(cameraTriggerDelayTextField), TextfieldUtil
+				.getLongValue(cameraTriggerReleaseTextField), 0));
+		cameraActionBean.setActionItemList(cameraActionItemBeanList);
+
+		ActionBean flash1TriggerActionBean = new ActionBean();
+		flash1TriggerActionBean.setPinIndex(0);
+		List<ActionItemBean> flash1TriggerItemBeanList = new ArrayList<>();
+		flash1TriggerItemBeanList.add(new ActionItemBean(true, TextfieldUtil.getLongValue(flash1TriggerDelayTextField), 10, 0));
+		flash1TriggerActionBean.setActionItemList(flash1TriggerItemBeanList);
+
+		ActionBean flash2TriggerActionBean = new ActionBean();
+		flash2TriggerActionBean.setPinIndex(0);
+		List<ActionItemBean> flash2TriggerItemBeanList = new ArrayList<>();
+		flash2TriggerItemBeanList.add(new ActionItemBean(true, TextfieldUtil.getLongValue(flash2TriggerDelayTextField), 10, 0));
+		flash2TriggerActionBean.setActionItemList(flash2TriggerItemBeanList);
+
+		ActionBean valve1ActionBean = new ActionBean();
+		valve1ActionBean.setPinIndex(action1Pin.getSelectionModel().getSelectedIndex());
+		valve1ActionBean.setDescription("Test");
+		valve1ActionBean.setActionItemList(valve1List);
+
+		ActionBean valve2ActionBean = new ActionBean();
+		valve2ActionBean.setPinIndex(action2Pin.getSelectionModel().getSelectedIndex());
+		valve2ActionBean.setDescription("Test");
+		valve2ActionBean.setActionItemList(valve2List);
+
+		ActionBean valve3ActionBean = new ActionBean();
+		valve3ActionBean.setPinIndex(action3Pin.getSelectionModel().getSelectedIndex());
+		valve3ActionBean.setDescription("Test");
+		valve3ActionBean.setActionItemList(valve3List);
+
+		ActionBean valve4ActionBean = new ActionBean();
+		valve4ActionBean.setPinIndex(action4Pin.getSelectionModel().getSelectedIndex());
+		valve4ActionBean.setDescription("Test");
+		valve4ActionBean.setActionItemList(valve4List);
+
+		configurationBean.setCameraActionBean(cameraActionBean);
+		configurationBean.setFlash1ActionBean(flash1TriggerActionBean);
+		configurationBean.setFlash2ActionBean(flash2TriggerActionBean);
+		configurationBean.setValve1ActionBean(valve1ActionBean);
+		configurationBean.setValve2ActionBean(valve2ActionBean);
+		configurationBean.setValve3ActionBean(valve3ActionBean);
+		configurationBean.setValve4ActionBean(valve4ActionBean);
+		return configurationBean;
+	}
+
+	private void initializeUi()
+	{
+		menubar.setUseSystemMenuBar(true);
+
+		ActionPinBean action1Bean = new ActionPinBean(100, false, "N/A");
+		ActionPinBean action2Bean = new ActionPinBean(12, false, "OUTPUT 1");
+		ActionPinBean action3Bean = new ActionPinBean(5, false, "OUTPUT 2");
+		ActionPinBean action4Bean = new ActionPinBean(5, false, "OUTPUT 3");
+		ActionPinBean action5Bean = new ActionPinBean(5, false, "OUTPUT 4");
+		ActionPinBean action6Bean = new ActionPinBean(5, false, "OUTPUT 5");
+		ActionPinBean action7Bean = new ActionPinBean(5, false, "OUTPUT 6");
+
+		action1Pin.getItems().addAll(action1Bean, action2Bean, action3Bean, action4Bean, action5Bean, action6Bean, action7Bean);
+		action2Pin.getItems().addAll(action1Bean, action2Bean, action3Bean, action4Bean, action5Bean, action6Bean, action7Bean);
+		action3Pin.getItems().addAll(action1Bean, action2Bean, action3Bean, action4Bean, action5Bean, action6Bean, action7Bean);
+		action4Pin.getItems().addAll(action1Bean, action2Bean, action3Bean, action4Bean, action5Bean, action6Bean, action7Bean);
+
+		/*
+		 * action1FiltertedList = new FilteredList<>(action1Pin.getItems());
+		 * action2FiltertedList = new FilteredList<>(action2Pin.getItems());
+		 * action3FiltertedList = new FilteredList<>(action3Pin.getItems());
+		 * action4FiltertedList = new FilteredList<>(action4Pin.getItems());
+		 * 
+		 * action1Pin.setItems(action1FiltertedList);
+		 * action2Pin.setItems(action2FiltertedList);
+		 * action3Pin.setItems(action3FiltertedList);
+		 * action4Pin.setItems(action4FiltertedList);
+		 */
+		action1Pin.setValue(action1Bean);
+		action2Pin.setValue(action1Bean);
+		action3Pin.setValue(action1Bean);
+		action4Pin.setValue(action1Bean);
+
+		valve1List = valve1Grid.getItems();
+		valve2List = valve2Grid.getItems();
+		valve3List = valve3Grid.getItems();
+		valve4List = valve4Grid.getItems();
+
+		loadButton.setOnAction(new LoadHandler());
+		saveButton.setOnAction(new SaveHandler());
+		saveAsButton.setOnAction(new SaveAsHandler());
+
+		valve1List.addListener(new ListChangeListener<ActionItemBean>()
+		{
+			@Override
+			public void onChanged(javafx.collections.ListChangeListener.Change<? extends ActionItemBean> ev)
+			{
+				valve1RemoveButton.setDisable(valve1List.size() == 0);
+			}
+		});
+
+		valve2List.addListener(new ListChangeListener<ActionItemBean>()
+		{
+			@Override
+			public void onChanged(javafx.collections.ListChangeListener.Change<? extends ActionItemBean> ev)
+			{
+				valve2RemoveButton.setDisable(valve2List.size() == 0);
+			}
+		});
+
+		valve3List.addListener(new ListChangeListener<ActionItemBean>()
+		{
+			@Override
+			public void onChanged(javafx.collections.ListChangeListener.Change<? extends ActionItemBean> ev)
+			{
+				valve3RemoveButton.setDisable(valve3List.size() == 0);
+			}
+		});
+
+		valve4List.addListener(new ListChangeListener<ActionItemBean>()
+		{
+			@Override
+			public void onChanged(javafx.collections.ListChangeListener.Change<? extends ActionItemBean> ev)
+			{
+				valve4RemoveButton.setDisable(valve4List.size() == 0);
+			}
+		});
+
+		valve1AddButton.setOnAction(new EventHandler<ActionEvent>()
+		{
+			@Override
+			public void handle(ActionEvent ev)
+			{
+				if (valve1List.size() < TABLE_MAX_ROWS)
+				{
+					valve1List.add(new ActionItemBean(true, 0, 0, 0));
+				}
+			}
+		});
+
+		valve1RemoveButton.setOnAction(new EventHandler<ActionEvent>()
+		{
+			@Override
+			public void handle(ActionEvent ev)
+			{
+				if (valve1Grid.getSelectionModel().getSelectedIndex() != -1)
+				{
+					valve1List.remove(valve1Grid.getSelectionModel().getSelectedIndex());
+				}
+			}
+		});
+
+		valve2AddButton.setOnAction(new EventHandler<ActionEvent>()
+		{
+			@Override
+			public void handle(ActionEvent ev)
+			{
+				if (valve2List.size() < TABLE_MAX_ROWS)
+				{
+					valve2List.add(new ActionItemBean(true, 0, 0, 0));
+				}
+			}
+		});
+
+		valve2RemoveButton.setOnAction(new EventHandler<ActionEvent>()
+		{
+			@Override
+			public void handle(ActionEvent ev)
+			{
+				if (valve2Grid.getSelectionModel().getSelectedIndex() != -1)
+				{
+					valve2List.remove(valve2Grid.getSelectionModel().getSelectedIndex());
+				}
+			}
+		});
+
+		valve3AddButton.setOnAction(new EventHandler<ActionEvent>()
+		{
+			@Override
+			public void handle(ActionEvent ev)
+			{
+				if (valve3List.size() < TABLE_MAX_ROWS)
+				{
+					valve3List.add(new ActionItemBean(true, 0, 0, 0));
+				}
+			}
+		});
+
+		valve3RemoveButton.setOnAction(new EventHandler<ActionEvent>()
+		{
+			@Override
+			public void handle(ActionEvent ev)
+			{
+				if (valve3Grid.getSelectionModel().getSelectedIndex() != -1)
+				{
+					valve3List.remove(valve3Grid.getSelectionModel().getSelectedIndex());
+				}
+			}
+		});
+
+		valve4AddButton.setOnAction(new EventHandler<ActionEvent>()
+		{
+			@Override
+			public void handle(ActionEvent ev)
+			{
+				if (valve4List.size() < TABLE_MAX_ROWS)
+				{
+					valve4List.add(new ActionItemBean(true, 0, 0, 0));
+				}
+			}
+		});
+
+		valve4RemoveButton.setOnAction(new EventHandler<ActionEvent>()
+		{
+			@Override
+			public void handle(ActionEvent ev)
+			{
+				if (valve4Grid.getSelectionModel().getSelectedIndex() != -1)
+				{
+					valve4List.remove(valve4Grid.getSelectionModel().getSelectedIndex());
+				}
+			}
+		});
+
+		actionButton.setOnAction(new RunHandler());
+
+		valve1Grid.setEditable(true);
+		valve2Grid.setEditable(true);
+		valve3Grid.setEditable(true);
+		valve4Grid.setEditable(true);
+
+		valve1Grid.getColumns().addAll(createGridColumns());
+		valve2Grid.getColumns().addAll(createGridColumns());
+		valve3Grid.getColumns().addAll(createGridColumns());
+		valve4Grid.getColumns().addAll(createGridColumns());
+
+	}
+
+	private void initialzeSerialPortSelector()
+	{
+
+		portNames = SerialPortList.getPortNames();
+
+		for (int i = 0; i < portNames.length; i++)
+		{
+			serialSelectChoiceBox.getItems().add(portNames[i]);
+		}
+
+		if (portNames.length == 1)
+		{
+			ttyDevice = portNames[0];
+			serialSelectChoiceBox.setValue(ttyDevice);
+		}
+
+	}
+
+	private void initializeSerialConnection()
+	{
+		if (ttyDevice != null)
+		{
+			try
+			{
+				serialPort = new SerialPort(ttyDevice);
+				serialPort.openPort();
+				serialPort.setParams(SerialPort.BAUDRATE_57600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
+				serialPort.addEventListener(new SerialPortEventListener()
+				{
+
+					@Override
+					public void serialEvent(SerialPortEvent ev)
+					{
+						try
+						{
+							int byteCount = ev.getEventValue();
+							
+							if (ev.isRXCHAR() && byteCount > 0)
+							{
+								commandReady = false;
+								byte buffer[] = serialPort.readBytes(byteCount);
+								
+								int i = 0;
+								int value = 0;
+
+								while (!commandReady)
+								{
+									if (i < buffer.length)
+									{
+										value = ((int) buffer[i++] & 0xff);
+									}
+									switch (phase)
+									{
+									case READ_DATA_PREFIX:
+									{
+										switch (value)
+										{
+										case SYNCBYTE1:
+										{
+											++syncCount;
+											break;
+										}
+										case SYNCBYTE2:
+										{
+											++syncCount;
+											if (syncCount == 2)
+											{
+												syncCount = 0;
+												phase = READ_COMMAND;
+											}
+											break;
+										}
+										}
+										break;
+									}
+									case READ_COMMAND:
+									{
+										currentCommand = 0;
+										switch (value)
+										{
+										case XCOMMAND_DEBUG:
+										{
+											phase = READ_LENGTH;
+											break;
+										}
+										case XCOMMAND_CANCEL:
+										{
+											phase = EXECUTE_COMMAND;
+											break;
+										}
+										}
+										currentCommand = value;
+										break;
+									}
+									case READ_LENGTH:
+									{
+										dataIndex = 0;
+										dataLength = value;
+										readDataBuffer = new byte[dataLength];
+										phase = READ_DATA;
+										break;
+									}
+									case READ_DATA:
+									{
+										if (dataIndex < dataLength)
+										{
+											readDataBuffer[dataIndex++] = (byte) value;
+										}
+										else
+										{
+											phase = EXECUTE_COMMAND;
+										}
+										break;
+									}
+
+									case EXECUTE_COMMAND:
+									{
+										String s = "";
+										long val4 = 0;
+										int val2 = 0;
+										byte val1 = 0;
+										if ((currentCommand & PARAMETER_STRING) == PARAMETER_STRING)
+										{
+											s = new String(readDataBuffer, 0, dataLength);
+										}
+										else if ((currentCommand & PARAMETER_NUMBER) == PARAMETER_NUMBER)
+										{
+											switch (dataLength)
+											{
+											case 1:
+											{
+												val1 = NumericConverter.toByte(readDataBuffer);
+												break;
+											}
+											case 2:
+											{
+												val2 = NumericConverter.toInt(readDataBuffer);
+												break;
+											}
+											case 4:
+											{
+												val4 = NumericConverter.toLong(readDataBuffer);
+												break;
+											}
+											}
+
+										}
+										else
+										{
+										}
+										switch (currentCommand)
+										{
+										case XCOMMAND_DEBUG:
+										{
+											debug(s);
+											break;
+										}
+										}
+										commandReady = true;
+										break;
+									}
+
+									}
+								}
+								/*
+								 * 
+								 * 
+								 * case EXECUTE_COMMAND: { String s = ""; long l = 0; int i = 0;
+								 * byte b = 0; if ((currentCommand & PARAMETER_STRING) ==
+								 * PARAMETER_STRING) { s = new String(dataBuffer, 0,
+								 * dataLength); } else if ((currentCommand & PARAMETER_NUMBER)
+								 * == PARAMETER_NUMBER) { switch (dataLength) { case 1: { b =
+								 * NumericConverter.toByte(dataBuffer); break; } case 2: { i =
+								 * NumericConverter.toInt(dataBuffer); break; } case 4: { l =
+								 * NumericConverter.toLong(dataBuffer); break; } }
+								 * 
+								 * } else { } switch (currentCommand) { case XCOMMAND_DEBUG: {
+								 * debug(s); break; } } break; }
+								 * 
+								 * case READ_DATA_NEXT: { prefixSynced = false; suffixSynced =
+								 * false; // syncCount1 = 0; // syncCount2 = 0;
+								 * 
+								 * switch (serialCommand) { case COMMAND_GET_NEXT_DATA_RECEIVED:
+								 * { System.out.println("send next block."); phase =
+								 * READ_DATA_PREFIX; sendNextCommand(); double value = ((double)
+								 * progressCount++ / (double) dataList.size());
+								 * progressBar.setProgress(value); break; } case
+								 * COMMAND_CONFIGURE_RECEIVED: {
+								 * System.out.println("send run configure command"); phase =
+								 * READ_DATA_PREFIX; progressBar.setProgress(1); cycleCount = 1;
+								 * setButtonText(actionButton, actionButtonText + " (" +
+								 * cycleCount + "/" + cyclesTextField.getText() + ")");
+								 * sendConfigureCommand(); break; } case
+								 * COMMAND_COUNTCYCLE_RECEIVED: { serialCommand = COMMAND_RESET;
+								 * phase = READ_DATA_PREFIX; cycleCount++;
+								 * setButtonText(actionButton, actionButtonText + " (" +
+								 * cycleCount + "/" + cyclesTextField.getText() + ")");
+								 * 
+								 * break; } case COMMAND_FINISHED_RECEIVED: {
+								 * System.out.println("finished..."); serialCommand =
+								 * COMMAND_RESET; phase = READ_DATA_PREFIX;
+								 * setActionButtonEnabled(false);
+								 * 
+								 * setButtonText(actionButton, actionButtonText);
+								 * progressBar.setProgress(0); break; } case
+								 * COMMAND_DISPLAY_VALUE_RECEIVED: { System.out.println("value="
+								 * + getValue(dataBuffer)); phase = READ_DATA_PREFIX;
+								 * 
+								 * break; }
+								 * 
+								 * } break; }
+								 */
+
+							}
+
+						}
+						catch (Exception e)
+						{
+							e.printStackTrace();
+						}
+					}
+				}, SerialPort.MASK_RXCHAR + SerialPort.MASK_CTS + SerialPort.MASK_DSR);
+
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private void debug(String text)
+	{
+		System.out.println(text);
+	}
+
+	private List<TableColumn<ActionItemBean, ?>> createGridColumns()
+	{
+
+		TableColumn<ActionItemBean, Boolean> activeColumn = new TableColumn<>("Active");
+		activeColumn.setCellValueFactory(new PropertyValueFactory<>("active"));
+		activeColumn.setCellFactory(CheckBoxTableCell.forTableColumn(activeColumn));
+		activeColumn.setMinWidth(50);
+		activeColumn.setEditable(true);
+
+		TableColumn<ActionItemBean, Long> delayColumn = new TableColumn<>("Delay");
+		delayColumn.setCellValueFactory(new PropertyValueFactory<>("delay"));
+		delayColumn.setCellFactory(TextFieldTableCell.<ActionItemBean, Long> forTableColumn(new LongStringConverter()));
+		delayColumn.setMinWidth(90);
+		delayColumn.setSortable(false);
+		delayColumn.setEditable(true);
+		delayColumn.onEditCommitProperty();
+		delayColumn.setOnEditCommit(new EventHandler<CellEditEvent<ActionItemBean, Long>>()
+		{
+			@Override
+			public void handle(CellEditEvent<ActionItemBean, Long> t)
+			{
+				((ActionItemBean) t.getTableView().getItems().get(t.getTablePosition().getRow())).setDelay(t.getNewValue());
+			}
+		});
+
+		TableColumn<ActionItemBean, Long> releaseColumn = new TableColumn<>("Release");
+		releaseColumn.setCellValueFactory(new PropertyValueFactory<>("release"));
+		releaseColumn.setCellFactory(TextFieldTableCell.<ActionItemBean, Long> forTableColumn(new LongStringConverter()));
+		releaseColumn.setMinWidth(90);
+		releaseColumn.setSortable(false);
+		releaseColumn.setEditable(true);
+		releaseColumn.onEditCommitProperty();
+		releaseColumn.setOnEditCommit(new EventHandler<CellEditEvent<ActionItemBean, Long>>()
+		{
+			@Override
+			public void handle(CellEditEvent<ActionItemBean, Long> t)
+			{
+				((ActionItemBean) t.getTableView().getItems().get(t.getTablePosition().getRow())).setRelease(t.getNewValue());
+			}
+		});
+
+		TableColumn<ActionItemBean, Integer> repeatColumn = new TableColumn<>("Repeats");
+		repeatColumn.setCellValueFactory(new PropertyValueFactory<>("repeats"));
+		repeatColumn.setCellFactory(TextFieldTableCell.<ActionItemBean, Integer> forTableColumn(new IntegerStringConverter()));
+		repeatColumn.setMinWidth(90);
+		repeatColumn.setEditable(true);
+		repeatColumn.onEditCommitProperty();
+
+		List<TableColumn<ActionItemBean, ?>> list = new ArrayList<>();
+		// list.add(activeColumn);
+		list.add(delayColumn);
+		list.add(releaseColumn);
+		// list.add(repeatColumn);
+		return list;
+	}
+
+	public void run() throws Exception
+	{
+		if (serialPort == null || !serialPort.isOpened())
+		{
+			initializeSerialConnection();
+		}
+
+		if (serialPort != null && serialPort.isOpened())
+		{
+			setActionButtonDisabled(false);
+			cycleCount = 0;
+			setButtonText(actionButton, actionButtonText + " (" + cycleCount + "/" + cyclesTextField.getText() + ")");
+			progressCount = 0;
+			progressBar.setProgress(0);
+			phase = READ_DATA_PREFIX;
+			buildData();
+			dataIterator = dataList.iterator();
+			// System.out.println("send first block.");
+			sendNextCommand();
+		}
+	}
+
+	private void sendConfigureCommand() throws Exception
+	{
+		serialPort.writeBytes(new byte[] { (byte) 0xaa, (byte) 0x55, (byte) 0b11001000 });
+	}
+
+	private boolean sendNextCommand() throws Exception
+	{
+		boolean hasNext = dataIterator.hasNext();
+		if (hasNext)
+		{
+			byte[] ba = dataIterator.next();
+			serialPort.writeBytes(ba);
+		}
+		return hasNext;
+	}
+
+	public byte[] getDataBlock(byte byteArray[])
+	{
+		byte[] ba = ArrayUtil.add(new byte[] { (byte) 0xaa, (byte) 0x55, }, byteArray);
+		return ba;
+	}
+
+	public byte[] getFinalBlock()
+	{
+		return new byte[] { (byte) 0xaa, (byte) 0x55, (byte) 0b01110000, };
+	}
+
+	private long getValue(byte buffer[])
+	{
+		long value = NumericConverter.toLong(buffer);
+		dataBuffer = new byte[] { 0, 0, 0, 0 };
+		return value;
+	}
+
+	private void saveConfiguration(File file)
+	{
+
+		if (file != null)
+		{
+			ObjectMapper mapper = new ObjectMapper();
+			try
+			{
+				mapper.writeValue(file, getConfiguration());
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private void loadConfiguration(File file)
+	{
+		if (file != null)
+		{
+			ObjectMapper mapper = new ObjectMapper();
+			try
+			{
+				setConfiguration(mapper.readValue(file, ConfigurationBean.class));
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public class SaveHandler implements EventHandler<ActionEvent>
+	{
+		@Override
+		public void handle(ActionEvent event)
+		{
+			if (file == null)
+			{
+				FileChooser fc = new FileChooser();
+				file = fc.showSaveDialog(null);
+			}
+			saveConfiguration(file);
+		}
+	}
+
+	public class SaveAsHandler implements EventHandler<ActionEvent>
+	{
+		@Override
+		public void handle(ActionEvent event)
+		{
+			FileChooser fc = new FileChooser();
+			file = fc.showSaveDialog(null);
+			if (file != null)
+			{
+				filename.setText(file.getAbsolutePath());
+			}
+			saveConfiguration(file);
+
+		}
+	}
+
+	public class LoadHandler implements EventHandler<ActionEvent>
+	{
+		@Override
+		public void handle(ActionEvent event)
+		{
+			FileChooser fc = new FileChooser();
+			file = fc.showOpenDialog(null);
+			if (file != null)
+			{
+				filename.setText(file.getAbsolutePath());
+			}
+			loadConfiguration(file);
+		}
+	}
+
+	public class RunHandler implements EventHandler<ActionEvent>
+	{
+		@Override
+		public void handle(ActionEvent arg0)
+		{
+			try
+			{
+				run();
+			}
+			catch (Exception ex)
+			{
+				ex.printStackTrace();
+			}
+		}
+	}
+
+	public void setActionButtonDisabled(boolean disable)
+	{
+		Platform.runLater(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				actionButton.setDisable(disable);
+			}
+		});
+	}
+
+	public void setButtonText(Button button, String text)
+	{
+		Platform.runLater(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				button.setText(text);
+			}
+		});
+	}
+
+}

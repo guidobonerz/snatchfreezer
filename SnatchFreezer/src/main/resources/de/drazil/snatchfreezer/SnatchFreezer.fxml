@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="715.0" prefWidth="1024.0" style="-fx-background-color: a0a0a0;" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.drazil.snatchfreezer.SnatchFreezerController">
+   <children>
+      <ToolBar prefHeight="40.0" prefWidth="1024.0">
+        <items>
+          <Button id="loadButton" fx:id="loadButton" contentDisplay="TEXT_ONLY" mnemonicParsing="false" text="Load" />
+            <Button fx:id="saveButton" mnemonicParsing="false" text="Save" />
+            <Button id="saveButton" fx:id="saveAsButton" contentDisplay="TEXT_ONLY" mnemonicParsing="false" text="Save As..." />
+            <Label alignment="CENTER_RIGHT" prefHeight="16.0" prefWidth="95.0" text="Serial Ports" />
+            <ChoiceBox fx:id="serialSelectChoiceBox" nodeOrientation="LEFT_TO_RIGHT" prefHeight="26.0" prefWidth="280.0" />
+        </items>
+      </ToolBar>
+      <TitledPane id="panel1" animated="false" collapsible="false" layoutY="44.0">
+        <content>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="340.0">
+               <children>
+                  <TableView id="grid1" fx:id="valve1Grid" editable="true" layoutY="40.0" prefHeight="160.0" prefWidth="340.0" />
+                  <ToolBar prefHeight="40.0" prefWidth="342.0">
+                    <items>
+                        <Button fx:id="valve1AddButton" mnemonicParsing="false" text="Add" />
+                        <Button fx:id="valve1RemoveButton" mnemonicParsing="false" text="Remove" />
+                        <TextField fx:id="valve1Description" />
+                    </items>
+                  </ToolBar>
+               </children>
+            </AnchorPane>
+        </content>
+         <graphic>
+            <ComboBox fx:id="action1Pin" prefWidth="150.0" />
+         </graphic>
+      </TitledPane>
+      <TitledPane id="panel1" animated="false" collapsible="false" layoutX="351.0" layoutY="44.0">
+         <content>
+            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="340.0">
+               <children>
+                  <TableView id="grid1" fx:id="valve2Grid" editable="true" layoutY="40.0" prefHeight="160.0" prefWidth="340.0" />
+                  <ToolBar prefHeight="40.0" prefWidth="342.0">
+                     <items>
+                        <Button fx:id="valve2AddButton" mnemonicParsing="false" text="Add" />
+                        <Button fx:id="valve2RemoveButton" mnemonicParsing="false" text="Remove" />
+                        <TextField fx:id="valve2Description" />
+                     </items>
+                  </ToolBar>
+               </children>
+            </AnchorPane>
+         </content>
+         <graphic>
+            <ComboBox fx:id="action2Pin" prefWidth="150.0" />
+         </graphic>
+      </TitledPane>
+      <TitledPane id="panel1" animated="false" collapsible="false" layoutY="287.0">
+         <content>
+            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="340.0">
+               <children>
+                  <TableView id="grid1" fx:id="valve3Grid" editable="true" layoutY="40.0" prefHeight="160.0" prefWidth="340.0" />
+                  <ToolBar prefHeight="40.0" prefWidth="342.0">
+                     <items>
+                        <Button fx:id="valve3AddButton" mnemonicParsing="false" text="Add" />
+                        <Button fx:id="valve3RemoveButton" mnemonicParsing="false" text="Remove" />
+                        <TextField fx:id="valve3Description" />
+                     </items>
+                  </ToolBar>
+               </children>
+            </AnchorPane>
+         </content>
+         <graphic>
+            <ComboBox fx:id="action3Pin" prefWidth="150.0" />
+         </graphic>
+      </TitledPane>
+      <TitledPane id="panel1" fx:id="valve4Activation" animated="false" collapsible="false" layoutX="351.0" layoutY="289.0">
+         <content>
+            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="340.0">
+               <children>
+                  <TableView id="grid1" fx:id="valve4Grid" editable="true" layoutY="40.0" prefHeight="160.0" prefWidth="340.0" />
+                  <ToolBar prefHeight="40.0" prefWidth="342.0">
+                     <items>
+                        <Button fx:id="valve4AddButton" mnemonicParsing="false" text="Add" />
+                        <Button fx:id="valve4RemoveButton" mnemonicParsing="false" text="Remove" />
+                        <TextField fx:id="valve4Description" />
+                     </items>
+                  </ToolBar>
+               </children>
+            </AnchorPane>
+         </content>
+         <graphic>
+            <ComboBox fx:id="action4Pin" prefWidth="150.0" />
+         </graphic>
+      </TitledPane>
+      <TextField id="cameraDelay" fx:id="cameraTriggerDelayTextField" layoutX="786.0" layoutY="74.0" />
+      <TextField id="cameraRelease" fx:id="cameraTriggerReleaseTextField" layoutX="786.0" layoutY="102.0" />
+      <TextField id="flashDelay" fx:id="flash1TriggerDelayTextField" layoutX="786.0" layoutY="170.0" prefHeight="26.0" prefWidth="151.0" />
+      <Label layoutX="704.0" layoutY="79.0" text="Delay" />
+      <Label layoutX="705.0" layoutY="107.0" text="Release" />
+      <Label layoutX="704.0" layoutY="175.0" text="Delay" />
+      <Label layoutX="704.0" layoutY="44.0" prefHeight="25.0" prefWidth="167.0" style="-fx-font-weight: bold;" text="Camera Trigger Timing" textFill="YELLOW" underline="true" />
+      <Label layoutX="704.0" layoutY="143.0" prefHeight="16.0" prefWidth="157.0" style="-fx-font-weight: bold;" text="Flash1 Trigger Timing" textFill="YELLOW" underline="true" />
+      <Label layoutX="6.0" layoutY="665.0" prefHeight="20.0" prefWidth="629.0" style="-fx-font-weight: bold;" text="All timing parameters have to be set in microseconds : 1000000us = 1s" textFill="#ffce00" />
+      <Label layoutX="704.0" layoutY="204.0" style="-fx-font-weight: bold;" text="Flash2 Trigger Timing" textFill="YELLOW" underline="true" />
+      <Label layoutX="703.0" layoutY="231.0" text="Delay" />
+      <TextField id="flashDelay" fx:id="flash2TriggerDelayTextField" layoutX="786.0" layoutY="226.0" prefHeight="26.0" prefWidth="151.0" />
+      <Label fx:id="filename" layoutX="91.0" layoutY="691.0" prefHeight="20.0" prefWidth="922.0" style="-fx-font-weight: bold;" textFill="#ffc200" />
+      <Label fx:id="filename1" layoutX="6.0" layoutY="691.0" prefHeight="20.0" prefWidth="85.0" style="-fx-font-weight: bold;" text="Filename:" textFill="#ffc200" />
+      <TextField fx:id="cycleDelayTextField" layoutX="786.0" layoutY="337.0" />
+      <Label layoutX="703.0" layoutY="289.0" style="-fx-font-weight: bold;" text="Cycle Settings" textFill="YELLOW" underline="true" />
+      <Label layoutX="705.0" layoutY="315.0" text="Cycles" />
+      <Label layoutX="704.0" layoutY="342.0" text="CycleDelay" />
+      <MenuBar fx:id="menubar" layoutX="-20.0" layoutY="-40.0">
+        <menus>
+          <Menu mnemonicParsing="false" text="File">
+            <items>
+              <MenuItem mnemonicParsing="false" text="Close" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Help">
+            <items>
+              <MenuItem mnemonicParsing="false" text="About" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+      <Spinner fx:id="cyclesSpinner" editable="true" layoutX="786.0" layoutY="311.0" />
+      <ProgressIndicator fx:id="cycleIndicator" layoutX="935.0" layoutY="463.0" prefHeight="60.0" prefWidth="51.0" progress="0.0" />
+      <Label layoutX="857.0" layoutY="443.0" text="Transfer" />
+      <Label layoutX="944.0" layoutY="443.0" text="Cycles" />
+      <Button fx:id="actionButton" layoutX="727.0" layoutY="463.0" mnemonicParsing="false" prefHeight="40.0" prefWidth="79.0" text="Action" />
+      <TabPane layoutX="3.0" layoutY="548.0" prefHeight="112.0" prefWidth="1018.0" tabClosingPolicy="UNAVAILABLE">
+        <tabs>
+          <Tab text="Notes">
+               <content>
+                  <TextArea fx:id="note" prefHeight="122.0" prefWidth="1018.0" />
+               </content>
+          </Tab>
+          <Tab text="Console">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+            </content>
+          </Tab>
+        </tabs>
+      </TabPane>
+      <ProgressIndicator fx:id="transmissionIndicator" layoutX="853.0" layoutY="463.0" prefHeight="60.0" prefWidth="51.0" progress="0.0" />
+   </children>
+</AnchorPane>
