@@ -1,0 +1,68 @@
+#pragma once
+#include "Arduino.h"
+const int PARAMETER_NO = B00000000;
+const int PARAMETER_STRING = B10000000;
+const int PARAMETER_NUMBER = B11000000;
+const int SYNCBYTE1 = 0xaa;
+const int SYNCBYTE2 = 0x55;
+const int COMMAND_SET_ACTION_PIN = B11000001;
+const int COMMAND_SET_ACTION_DELAY_TIME = B11000010;
+const int COMMAND_SET_ACTION_RELEASE_TIME = B11000011;
+const int COMMAND_SET_ACTION_DELAY_INCREMENT_TIME = B11000100;
+const int COMMAND_SET_ACTION_RELEASE_INCREMENT_TIME = B11000101;
+const int COMMAND_SET_CYCLE_COUNT = B11000110;
+const int COMMAND_SET_CYCLE_DELAY = B11000111;
+const int COMMAND_FLUSH = B11001001;
+const int COMMAND_TEST = B11001010;
+const int COMMAND_ADD_ACTION = B00000001;
+const int COMMAND_ADD_ACTION_TIMINGS = B00000010;
+const int COMMAND_NEXT = B00000011;
+const int COMMAND_REPEAT = B00000100;
+const int COMMAND_SET_LOG_LEVEL = B11001011;
+const int COMMAND_RUN = B00000110;
+const int COMMAND_CANCEL = B00000111;
+const int COMMAND_RESET = B00001000;
+const int COMMAND_FINISHED = B00001001;
+const int COMMAND_ECHO = B10001001;
+const int COMMAND_LOG_INFO = B10001010;
+const int COMMAND_LOG_DEBUG = B10001011;
+const int COMMAND_LOG_ERROR = B10001100;
+
+
+//const int COMMAND_RUN = 10;
+
+const int READ_DATA_PREFIX = 10;
+const int READ_COMMAND = 20;
+const int READ_LENGTH = 30;
+const int READ_DATA = 40;
+const int READ_CHECKSUM = 50;
+const int EXECUTE_COMMAND = 60;
+
+
+const int CAMERA1_PIN = 10;
+const int CAMERA2_PIN = 11;
+const int FLASH1_PIN = 8;
+const int FLASH2_PIN = 9;
+const int VALVE1_PIN = 2;
+const int VALVE2_PIN = 3;
+const int VALVE3_PIN = 4;
+const int VALVE4_PIN = 5;
+const int VALVE5_PIN = 6;
+const int VALVE6_PIN = 7;
+//const int BUTTON_PIN = 1;// unset
+const int ACTIVE_PIN = 13;
+const int INACTIVE = 100;
+
+const int PHASE_READ_SERIAL = 10;
+const int PHASE_EXECUTE_COMMAND = 20;
+const int PHASE_RUN_PROGRAM = 30;
+
+const uint8_t COMMAND_WAIT_FOR_SERIAL_DATA = 0;
+const uint8_t COMMAND_PARSE_BUFFER = 1;
+
+const uint8_t BYTE = 1;
+const uint8_t WORD = 2;
+const uint8_t DWORD = 4;
+
+
+
