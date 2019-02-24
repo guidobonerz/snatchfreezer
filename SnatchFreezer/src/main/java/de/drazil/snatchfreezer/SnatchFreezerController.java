@@ -71,6 +71,7 @@ public class SnatchFreezerController implements Initializable {
 	// 00|000111 = cancel
 	// 00|001000 = reset
 	// 00|001001 = finished
+	// 00|111111 = dummy
 	// 10|001001 = echo
 	// 10|001010 = log_info
 	// 10|001011 = log_debug
@@ -104,10 +105,42 @@ public class SnatchFreezerController implements Initializable {
 	private final static int COMMAND_CANCEL = 0b00000111;
 	private final static int COMMAND_RESET = 0b00001000;
 	private final static int COMMAND_FINISHED = 0b00001001;
+	private final static int COMMAND_DUMMY = 0b00111111;
 	private final static int COMMAND_ECHO = 0b10001001;
-	private final static int COMMAND_LOG_INFO = 0b10001010;
-	private final static int COMMAND_LOG_DEBUG = 0b10001011;
-	private final static int COMMAND_LOG_ERROR = 0b10001100;
+	private final static int COMMAND_LOG_INFO = 0b11001010;
+	private final static int COMMAND_LOG_DEBUG = 0b11001011;
+	private final static int COMMAND_LOG_ERROR = 0b11001100;
+	private final static int COMMAND_LOG_OFF = 0b10001110;
+
+	private final static int MESSAGE_BYTE = 1;
+	private final static int MESSAGE_WORD = 2;
+	private final static int MESSAGE_DWORD = 3;
+	private final static int MESSAGE_STRING_PARAMETER = 4;
+	private final static int MESSAGE_NUMBER_PARAMETER = 5;
+	private final static int MESSAGE_NO_PARAMETER = 6;
+	private final static int MESSAGE_RUN = 7;
+	private final static int MESSAGE_RESET = 8;
+	private final static int MESSAGE_CANCEL = 9;
+	private final static int MESSAGE_ECHO = 10;
+	private final static int MESSAGE_SET_LOG_LEVEL = 11;
+	private final static int MESSAGE_ADD_ACTION = 12;
+	private final static int MESSAGE_SET_ACTION_PIN = 13;
+	private final static int MESSAGE_ADD_ACTION_TIMIMGS = 14;
+	private final static int MESSAGE_SET_ACTION_DELAY = 15;
+	private final static int MESSAGE_SET_ACTION_DELAY_INCREMENT = 16;
+	private final static int MESSAGE_SET_ACTION_RELEASE = 17;
+	private final static int MESSAGE_SET_ACTION_RELEASE_INCREMENT = 18;
+	private final static int MESSAGE_SET_CYCLE_COUNT = 19;
+	private final static int MESSAGE_SET_CYCLE_DELAY = 20;
+	private final static int MESSAGE_SYNC1 = 21;
+	private final static int MESSAGE_SYNC2 = 22;
+	private final static int MESSAGE_READ_COMMAND = 23;
+	private final static int MESSAGE_READ_LENGTH = 24;
+	private final static int MESSAGE_READ_DATA = 25;
+	private final static int MESSAGE_READ_CHECKSUM = 26;
+	private final static int MESSAGE_CHECKSUM_ERROR = 27;
+	private final static int MESSAGE_CHECKSUM_OK = 28;
+	private final static int MESSAGE_MAX_ACTION_COUNT = 29;
 
 	private final static int READ_DATA_PREFIX = 10;
 	private final static int READ_COMMAND = 20;
@@ -115,10 +148,10 @@ public class SnatchFreezerController implements Initializable {
 	private final static int READ_DATA = 40;
 	private final static int EXECUTE_COMMAND = 50;
 
+	private final static int DEBUG = 1;
+	private final static int INFO = 2;
+	private final static int ERROR = 3;
 	private final static int OFF = 99;
-	private final static int DEBUG = 0;
-	private final static int INFO = 1;
-	private final static int ERROR = 2;
 
 	// private final static int READ_DATA_NEXT = 50;
 	// private final static int COMMAND_RESET = 0;
@@ -262,21 +295,21 @@ public class SnatchFreezerController implements Initializable {
 		commandList = new ArrayList<byte[]>();
 
 		addSetLogLevel(DEBUG);
-		addEcho("Hallo Snatchfreezer");
+		addEcho("Hello Snatchfreezer");
 		addReset();
 		addAction(2);
-		addActionTimings(500, 500, 0, 0);
-		
+		addActionTimings(200, 200, 0, 0);
+
 		/*
-		 * addAction(3); addActionTimings(500, 500, 0, 0); addActionTimings(500,
-		 * 500, 0, 0);
+		 * addAction(3); addActionTimings(500, 500, 0, 0); addActionTimings(500, 500, 0,
+		 * 0);
 		 * 
 		 * addAction(4); addActionTimings(400, 600, 0, 0);
 		 * 
 		 * addAction(5); addActionTimings(600, 400, 0, 0);
 		 * 
-		 * addAction(6); addActionTimings(800, 200, 0, 0); addActionTimings(100,
-		 * 50, 0, 0);
+		 * addAction(6); addActionTimings(800, 200, 0, 0); addActionTimings(100, 50, 0,
+		 * 0);
 		 * 
 		 * addAction(7); addActionTimings(1000, 1000, 0, 0);
 		 */
@@ -366,22 +399,18 @@ public class SnatchFreezerController implements Initializable {
 	 * (NumericConverter.toByteArray(TextfieldUtil.getLongValue
 	 * (cameraTriggerDelayTextField), 4)));
 	 * dataList.add(getDataBlock(NumericConverter
-	 * .toByteArray(TextfieldUtil.getLongValue(cameraTriggerReleaseTextField),
-	 * 4)));
+	 * .toByteArray(TextfieldUtil.getLongValue(cameraTriggerReleaseTextField), 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(TextfieldUtil
-	 * .getLongValue(flash1TriggerDelayTextField), 4)));
-	 * dataList.add(getDataBlock
+	 * .getLongValue(flash1TriggerDelayTextField), 4))); dataList.add(getDataBlock
 	 * (NumericConverter.toByteArray(TextfieldUtil.getLongValue
 	 * (flash2TriggerDelayTextField), 4)));
 	 * 
-	 * // valve1
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(action1Pin
+	 * // valve1 dataList.add(getDataBlock(NumericConverter.toByteArray(action1Pin
 	 * .getValue().getPin(), 1))); size = valve1List.size();
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for
-	 * (int i = 0; i < size; i++) { ActionItemBean bean = valve1List.get(i);
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int i
+	 * = 0; i < size; i++) { ActionItemBean bean = valve1List.get(i);
 	 * 
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(),
-	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(), 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
 	 * 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
@@ -392,42 +421,38 @@ public class SnatchFreezerController implements Initializable {
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); }
 	 * 
-	 * // valve2
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(action2Pin
+	 * // valve2 dataList.add(getDataBlock(NumericConverter.toByteArray(action2Pin
 	 * .getValue().getPin(), 1))); size = valve2List.size();
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for
-	 * (int i = 0; i < size; i++) { ActionItemBean bean = valve2List.get(i);
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int i
+	 * = 0; i < size; i++) { ActionItemBean bean = valve2List.get(i);
 	 * 
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(),
-	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(), 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
 	 * 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
 	 * 1))); } // filler for (int i = 0; i < TABLE_MAX_ROWS - size; i++) {
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); } //
-	 * valve3 dataList.add(getDataBlock(NumericConverter.toByteArray(action3Pin.
-	 * getValue ().getPin(), 1))); size = valve3List.size();
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for
-	 * (int i = 0; i < size; i++) { ActionItemBean bean = valve3List.get(i);
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); } // valve3
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(action3Pin. getValue
+	 * ().getPin(), 1))); size = valve3List.size();
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int i
+	 * = 0; i < size; i++) { ActionItemBean bean = valve3List.get(i);
 	 * 
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(),
-	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(), 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
 	 * 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
 	 * 1))); } // filler for (int i = 0; i < TABLE_MAX_ROWS - size; i++) {
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); } //
-	 * valve4 dataList.add(getDataBlock(NumericConverter.toByteArray(action4Pin.
-	 * getValue ().getPin(), 1))); size = valve4List.size();
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for
-	 * (int i = 0; i < size; i++) { ActionItemBean bean = valve4List.get(i);
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); } // valve4
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(action4Pin. getValue
+	 * ().getPin(), 1))); size = valve4List.size();
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int i
+	 * = 0; i < size; i++) { ActionItemBean bean = valve4List.get(i);
 	 * 
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(),
-	 * 4)));
+	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(), 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
 	 * 4)));
 	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
@@ -770,7 +795,8 @@ public class SnatchFreezerController implements Initializable {
 						case COMMAND_NEXT:
 						case COMMAND_REPEAT:
 						case COMMAND_CANCEL:
-						case COMMAND_FINISHED: {
+						case COMMAND_FINISHED:
+						case COMMAND_DUMMY: {
 							phase = EXECUTE_COMMAND;
 							break;
 						}
@@ -828,15 +854,18 @@ public class SnatchFreezerController implements Initializable {
 							break;
 						}
 						case COMMAND_LOG_DEBUG: {
-							debug(s);
+							debug(value);
 							break;
 						}
 						case COMMAND_LOG_ERROR: {
-							error(s);
+							error(value);
 							break;
 						}
 						case COMMAND_LOG_INFO: {
-							info(s);
+							info(value);
+							break;
+						}
+						case COMMAND_LOG_OFF: {
 							break;
 						}
 						case COMMAND_ECHO: {
@@ -844,7 +873,11 @@ public class SnatchFreezerController implements Initializable {
 							break;
 						}
 						case COMMAND_RESET: {
-							debug(s);
+							// debug(s);
+							break;
+						}
+						case COMMAND_DUMMY: {
+
 							break;
 						}
 						case COMMAND_FINISHED: {
@@ -922,16 +955,24 @@ public class SnatchFreezerController implements Initializable {
 		System.out.println("ECHO: " + text);
 	}
 
-	private void debug(String text) {
-		System.out.println("DEBUG: " + text);
+	private void debug(long value) {
+		// System.out.println("DEBUG: " + text);
 	}
 
-	private void info(String text) {
-		System.out.println("INFO: " + text);
+	private void info(long value) {
+		// System.out.println("INFO: " + text);
 	}
 
-	private void error(String text) {
-		System.out.println("ERROR: " + text);
+	private void error(long value) {
+		// System.out.println("ERROR: " + text);
+	}
+
+	private void printMessage(int id) {
+		switch (id) {
+		case MESSAGE_ADD_ACTION: {
+			break;
+		}
+		}
 	}
 
 	private List<TableColumn<ActionItemBean, ?>> createGridColumns() {
@@ -1031,7 +1072,7 @@ public class SnatchFreezerController implements Initializable {
 		}
 		boolean hasNext = dataIterator.hasNext();
 		if (hasNext) {
-			System.out.println("send Command");
+			System.out.println("Send Command");
 			currentCommandBuffer = dataIterator.next();
 			int index = commandList.indexOf(currentCommandBuffer);
 
@@ -1042,7 +1083,7 @@ public class SnatchFreezerController implements Initializable {
 			serialPort.writeBytes(currentCommandBuffer, currentCommandBuffer.length);
 			serialPort.getOutputStream().flush();
 		} else {
-			System.out.println("no more Commands");
+			System.out.println("No More Commands");
 			dataIterator = null;
 			transmissionIndicator.setProgress(1f);
 		}
@@ -1062,10 +1103,10 @@ public class SnatchFreezerController implements Initializable {
 		return ba;
 	}
 
-	public byte[] getFinalBlock() {
-		return new byte[] { (byte) 0xaa, (byte) 0x55, (byte) 0b01110000 };
-	}
-
+	/*
+	 * public byte[] getFinalBlock() { return new byte[] { (byte) 0xaa, (byte) 0x55,
+	 * (byte) 0b01110000 }; }
+	 */
 	private long getValue(byte buffer[]) {
 		long value = NumericConverter.toLong(buffer);
 		dataBuffer = new byte[] { 0, 0, 0, 0 };

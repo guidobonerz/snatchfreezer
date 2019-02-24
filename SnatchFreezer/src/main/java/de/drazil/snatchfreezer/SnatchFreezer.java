@@ -12,11 +12,19 @@ public class SnatchFreezer extends Application {
 	@Override
 	public void start(Stage stage) throws Exception {
 		setUserAgentStylesheet(STYLESHEET_MODENA);
-		FXMLLoader loader = new FXMLLoader(SnatchFreezer.class.getResource("SnatchFreezer.fxml"));
-		
+
+		FXMLLoader loader = null;
+		try {
+			loader = new FXMLLoader(getClass().getResource("SnatchFreezer.fxml"));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		Parent root = loader.load();
+
 		Scene scene = new Scene(root, 1024, 715);
-		scene.getStylesheets().add("css/application.css");
+		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 		stage.setTitle("SnatchFreezer");
 		stage.setScene(scene);
 		stage.show();

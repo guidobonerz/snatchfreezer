@@ -45,8 +45,6 @@ bool nextCycle = true;
 bool canceled = false;
 bool pause = false;
 
-
-
 void setup() {
 	Serial.begin(57600);
 	pinMode(ACTIVE_PIN, OUTPUT); //ControlLED
@@ -61,9 +59,8 @@ void setup() {
 void clearActions()
 {
 	currentActionCount = 0;
-	//currentCycleCount = 0;
 	completeCount = 0;  
-	for (int i = 0; i < arraySize(actionTimer); i++)
+	for (uint8_t i = 0; i < arraySize(actionTimer); i++)
 	{
 		actionTimer[i].timerCount = 0;
 		actionTimer[i].targetTime = 0; 
@@ -75,7 +72,7 @@ void clearActions()
 void  resetStartTime()
 {
 	uint32_t startMillis = millis();
-	for (int i = 0; i < arraySize(actionTimer); i++)
+	for (uint8_t i = 0; i < arraySize(actionTimer); i++)
 	{
 		actionTimer[i].targetTime =  startMillis + actionTimer[i].delayStartTime[0];
 	}
@@ -97,16 +94,15 @@ void addAction()
 {
 	currentActionCount++;
 	maxActionCount = currentActionCount;
-	String s = String("MaxActionCount:");
-	s += currentActionCount;
-	Log::info(s);
+  //String s = String("MaxActionCount:");
+	//s += currentActionCount;
+	Log::info(MESSAGE_MAX_ACTION_COUNT);
 }
 
 void setActionPin(uint8_t pin)
 {
 	actionTimer[currentActionCount-1].pin = pin;
 	pinMode(pin, OUTPUT);
-	//digitalWrite(pin, HIGH);
 }
 
 void addActionTimings()
@@ -218,9 +214,7 @@ void loop()
 				completeCount = 0;
 				currentCycleCount++;
 			}
-
 			//-------------------------------------------------------
-
 		}
 		
 
@@ -239,27 +233,31 @@ void loop()
 void execute()
 {
 	String s = String("");
-	uint32_t value = 0;
+  uint32_t value = 0;
 	if ((currentSerialCommand&PARAMETER_NUMBER) == PARAMETER_NUMBER)
 	{
+  Log::debug(MESSAGE_NUMBER_PARAMETER);
 		switch (dataLength)
 		{
 		case BYTE:
 		{
 			value = NumberConverter::getUInt8(readDataBuffer, 0);
-			Log::debug(String("Byte:") + String(value));
+			//Log::debug(String("Byte:") + String(value));
+      Log::debug(MESSAGE_BYTE);
 			break;
 		}
 		case WORD:
 		{
 			value = NumberConverter::getUInt16(readDataBuffer, 0);
-			Log::debug(String("Word:") + String(value));
+			//Log::debug(String("Word:") + String(value));
+      Log::debug(MESSAGE_WORD);
 			break;
 		}
 		case DWORD:
 		{
 			value = NumberConverter::getUInt32(readDataBuffer, 0);
-			Log::debug(String("DWord:") + String(value));
+			//Log::debug(String("DWord:") + String(value));
+      Log::debug(MESSAGE_DWORD);
 			break;
 		}
 		}
@@ -271,11 +269,12 @@ void execute()
 		{
 			s += (char)readDataBuffer[i];
 		}
-		Log::debug("String Parameter:" + s);
+		//Log::debug("String Parameter:" + s);
+    Log::debug(MESSAGE_STRING_PARAMETER);
 	}
 	else if ((currentSerialCommand & PARAMETER_NO) == PARAMETER_NO)
 	{
-		Log::debug("No Parameters");
+		Log::debug(MESSAGE_NO_PARAMETER);
 	}
 
 	switch (currentSerialCommand)
@@ -283,102 +282,102 @@ void execute()
 
 	case COMMAND_RUN:
 	{
-		String s = String("Run");
-		Log::info(s);
+		//String s = String("Run");
+		Log::info(MESSAGE_RUN);
 		runProgram = true;
 		break;
 	}
 	case COMMAND_RESET:
 	{
-		Log::info("Reset");
+		Log::info(MESSAGE_RESET);
 		reset();
 		break;
 	}
 	case COMMAND_CANCEL:
 	{
-		//Log::info("Cancel");
-		//canceled = true;
+		Log::info(MESSAGE_CANCEL);
+		canceled = true;
 		break;
 	}
 	case COMMAND_ECHO:
 	{
-		Log::info("Echo");
+		Log::info(MESSAGE_ECHO);
 		Log::echo(s);
 		break;
 	}
 	case COMMAND_SET_LOG_LEVEL:
 	{
-		Log::info("SetLogLevel");
+		Log::info(MESSAGE_SET_LOG_LEVEL);
 		Log::setLogLevel(value);
 		break;
 	}
 	case COMMAND_ADD_ACTION:
 	{
-		String s = String("AddAction");
-		Log::info(s);
+		//String s = String("AddAction");
+		Log::info(MESSAGE_ADD_ACTION);
 		addAction();
 		break;
 	}
 	case COMMAND_SET_ACTION_PIN:
 	{
-		String s = String("SetActionPin:");
-		s += value;
-		Log::info(s);
+		//String s = String("SetActionPin:");
+		//s += value;
+		Log::info(MESSAGE_SET_ACTION_PIN);
 		setActionPin(value);
 		break;
 	}
 	case COMMAND_ADD_ACTION_TIMINGS:
 	{
-		String s = String("AddActionTimings");
-		Log::info(s);
+		//String s = String("AddActionTimings");
+		Log::info(MESSAGE_ADD_ACTION_TIMIMGS);
 		addActionTimings();
 		break;
 	}
 	case COMMAND_SET_ACTION_DELAY_TIME:
 	{
-		String s = String("SetActionDelay:");
-		s += value;
-		Log::info(s);
+		//String s = String("SetActionDelay:");
+		//s += value;
+		Log::info(MESSAGE_SET_ACTION_DELAY);
 		setDelayTime(value);
 		break;
 	}
 	case COMMAND_SET_ACTION_DELAY_INCREMENT_TIME:
 	{
-		String s = String("SetActionDelayIncrement:");
-		s += value;
-		Log::info(s);
+		//String s = String("SetActionDelayIncrement:");
+		//s += value;
+		Log::info(MESSAGE_SET_ACTION_DELAY_INCREMENT);
 		setStartDelayIncrementTime(value);
 		break;
 	}
 	case COMMAND_SET_ACTION_RELEASE_TIME:
 	{
-		String s = String("SetActionRelease:");
-		s += value;
-		Log::info(s);
+		//String s = String("SetActionRelease:");
+		//s += value;
+		Log::info(MESSAGE_SET_ACTION_RELEASE);
 		setReleaseTime(value);
 		break;
 	}
 	case COMMAND_SET_ACTION_RELEASE_INCREMENT_TIME:
 	{
-		String s = String("SetActionReleaseIncrement:");
-		s += value;
-		Log::info(s);
+		//String s = String("SetActionReleaseIncrement:");
+		//s += value;
+		Log::info(MESSAGE_SET_ACTION_RELEASE_INCREMENT);
 		setReleaseDelayIncrementTime(value);
 		break;
 	}
 	case COMMAND_SET_CYCLE_COUNT:
 	{
-		String s = String("SetCycleCount:");
-		s += value;
-		Log::info(s);
+		//String s = String("SetCycleCount:");
+		//s += value;
+		Log::info(MESSAGE_SET_CYCLE_COUNT);
 		setCycleCount(value);
 		break;
 	}
 	case COMMAND_SET_CYCLE_DELAY:
 	{
-		String s = String("SetCycleDelay:");
-		s += value;
-		Log::info(s);
+		//String s = String("SetCycleDelay:");
+		//s += value;
+		Log::info(MESSAGE_SET_CYCLE_DELAY);
 		setCycleDelay(value);
 		break;
 	}
@@ -412,13 +411,15 @@ void parse(uint8_t data)
 		case SYNCBYTE1:
 		{
 			serialReadPhase = READ_DATA_PREFIX;
-			Log::debug("Sync1");
+			Log::debug(MESSAGE_SYNC1);
+//  Log::debug("Sync1");
 			++syncCount;
 			break;
 		}
 		case SYNCBYTE2:
 		{
-			Log::debug("Sync2");
+			Log::debug(MESSAGE_SYNC2);
+ //Log::debug2("Sync2");
 			++syncCount;
 			if (syncCount == 2) {
 				serialReadPhase = READ_COMMAND;
@@ -432,7 +433,7 @@ void parse(uint8_t data)
 
 	case READ_COMMAND:
 	{
-		Log::debug("Read Command");
+		Log::debug(MESSAGE_READ_COMMAND);
 		currentSerialCommand = data;
 		calculatedChecksum ^= (uint8_t)currentSerialCommand;
 		dataLength = 0;
@@ -458,9 +459,9 @@ void parse(uint8_t data)
 	}
 	case READ_LENGTH:
 	{
-		String s = String("Read Length:");
-		s += data;
-		Log::debug(s);
+		//String s = String("Read Length:");
+		//s += data;
+		Log::debug(MESSAGE_READ_LENGTH);
 		dataLength = data;
 		dataIndex = 0;
 		calculatedChecksum ^= (uint8_t)dataLength;
@@ -472,9 +473,9 @@ void parse(uint8_t data)
 		serialReadPhase = READ_DATA;
 		if (dataIndex < dataLength)
 		{
-			String s = String("Read Data:");
-			s += data;
-			Log::debug(s);
+			//String s = String("Read Data:");
+			//s += data;
+			Log::debug(MESSAGE_READ_DATA);
 			uint8_t b = data;
 			calculatedChecksum ^= b;
 			readDataBuffer[dataIndex++] = b;
@@ -483,17 +484,17 @@ void parse(uint8_t data)
 		{
 			if (retries < 3)
 			{
-				Log::debug("Read Checksum");
+				Log::debug(MESSAGE_READ_CHECKSUM);
 
 				if (data != calculatedChecksum)
 				{
-					Log::debug("Checksum ERROR");
+					Log::error(MESSAGE_CHECKSUM_ERROR);
 					retries++;
 					SerialHelper::repeatCommand();
 				}
 				else
 				{
-					Log::debug("Checksum OK");
+					Log::debug(MESSAGE_CHECKSUM_OK);
 					retries = 0;
 					calculatedChecksum = 0;
 					phase = PHASE_EXECUTE_COMMAND;
@@ -517,5 +518,3 @@ int v;
 return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
 }
 */
-
-

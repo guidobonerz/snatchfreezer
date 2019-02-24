@@ -1,7 +1,6 @@
 #include "Arduino.h"
 #include "SerialHelper.h"
 #include "Constants.h"
-#include "Log.h"
 
 uint8_t shBuffer[40];
 
