@@ -278,6 +278,11 @@ public class SnatchFreezerController implements Initializable {
 
 	private String ttyDevice = null;
 
+	public SnatchFreezerController() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
 	/*
 	 * private FilteredList<ActionPinBean> action1FiltertedList; private
 	 * FilteredList<ActionPinBean> action2FiltertedList; private
@@ -854,15 +859,15 @@ public class SnatchFreezerController implements Initializable {
 							break;
 						}
 						case COMMAND_LOG_DEBUG: {
-							debug(value);
+							debug((int) value);
 							break;
 						}
 						case COMMAND_LOG_ERROR: {
-							error(value);
+							error((int) value);
 							break;
 						}
 						case COMMAND_LOG_INFO: {
-							info(value);
+							info((int) value);
 							break;
 						}
 						case COMMAND_LOG_OFF: {
@@ -955,24 +960,139 @@ public class SnatchFreezerController implements Initializable {
 		System.out.println("ECHO: " + text);
 	}
 
-	private void debug(long value) {
-		// System.out.println("DEBUG: " + text);
+	private void debug(int id) {
+		System.out.println("DEBUG: " + getMessage(id));
 	}
 
-	private void info(long value) {
-		// System.out.println("INFO: " + text);
+	private void info(int id) {
+		System.out.println("INFO: " + getMessage(id));
 	}
 
-	private void error(long value) {
-		// System.out.println("ERROR: " + text);
+	private void error(int id) {
+		System.out.println("INFO: " + getMessage(id));
 	}
 
-	private void printMessage(int id) {
+	private String getMessage(int id) {
+		String s = "";
 		switch (id) {
+		case MESSAGE_BYTE: {
+			s = "Byte";
+			break;
+		}
+		case MESSAGE_WORD: {
+			s = "Word";
+			break;
+		}
+		case MESSAGE_DWORD: {
+			s = "DWord";
+			break;
+		}
+		case MESSAGE_STRING_PARAMETER: {
+			s = "String Parameter";
+			break;
+		}
+		case MESSAGE_NUMBER_PARAMETER: {
+			s = "Numeric Parameter";
+			break;
+		}
+		case MESSAGE_NO_PARAMETER: {
+			s = "No Parameter";
+			break;
+		}
+		case MESSAGE_RUN: {
+			s = "Run";
+			break;
+		}
+		case MESSAGE_RESET: {
+			s = "Reset";
+			break;
+		}
+		case MESSAGE_CANCEL: {
+			s = "Cancel";
+			break;
+		}
+		case MESSAGE_ECHO: {
+			s = "Echo";
+			break;
+		}
+		case MESSAGE_SET_LOG_LEVEL: {
+			s = "Set Log Level";
+			break;
+		}
 		case MESSAGE_ADD_ACTION: {
+			s = "Add Action";
+			break;
+		}
+		case MESSAGE_SET_ACTION_PIN: {
+			s = "Set Action Pin";
+			break;
+		}
+		case MESSAGE_ADD_ACTION_TIMIMGS: {
+			s = "Add Action Timings";
+			break;
+		}
+		case MESSAGE_SET_ACTION_DELAY: {
+			s = "Set Action Delay";
+			break;
+		}
+		case MESSAGE_SET_ACTION_DELAY_INCREMENT: {
+			s = "Set Action Delay Increment";
+			break;
+		}
+		case MESSAGE_SET_ACTION_RELEASE: {
+			s = "Set Action Release";
+			break;
+		}
+		case MESSAGE_SET_ACTION_RELEASE_INCREMENT: {
+			s = "Set Action Release Increment";
+			break;
+		}
+		case MESSAGE_SET_CYCLE_COUNT: {
+			s = "Set Cycle Count";
+			break;
+		}
+		case MESSAGE_SET_CYCLE_DELAY: {
+			s = "Set Cycle Delay";
+			break;
+		}
+		case MESSAGE_SYNC1: {
+			s = "Sync1";
+			break;
+		}
+		case MESSAGE_SYNC2: {
+			s = "Sync2";
+			break;
+		}
+		case MESSAGE_READ_COMMAND: {
+			s = "Read Command";
+			break;
+		}
+		case MESSAGE_READ_LENGTH: {
+			s = "Read Length";
+			break;
+		}
+		case MESSAGE_READ_DATA: {
+			s = "Read Data";
+			break;
+		}
+		case MESSAGE_READ_CHECKSUM: {
+			s = "Read Checksum";
+			break;
+		}
+		case MESSAGE_CHECKSUM_ERROR: {
+			s = "Checksum Error";
+			break;
+		}
+		case MESSAGE_CHECKSUM_OK: {
+			s = "Checksum OK";
+			break;
+		}
+		case MESSAGE_MAX_ACTION_COUNT: {
+			s = "Max Action Count";
 			break;
 		}
 		}
+		return s;
 	}
 
 	private List<TableColumn<ActionItemBean, ?>> createGridColumns() {

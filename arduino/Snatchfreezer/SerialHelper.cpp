@@ -2,7 +2,7 @@
 #include "SerialHelper.h"
 #include "Constants.h"
 
-uint8_t shBuffer[40];
+uint8_t shBuffer[10];
 
 
 

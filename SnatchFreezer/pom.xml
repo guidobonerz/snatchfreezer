@@ -33,12 +33,13 @@
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/org.jfxtras/jmetro -->
 		<!-- https://mvnrepository.com/artifact/com.jfoenix/jfoenix -->
+		<!-- 
 		<dependency>
 			<groupId>com.jfoenix</groupId>
 			<artifactId>jfoenix</artifactId>
 			<version>9.0.8</version>
 		</dependency>
-
+ -->
 
 		<dependency>
 			<groupId>com.fazecast</groupId>
