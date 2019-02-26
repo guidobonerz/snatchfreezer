@@ -24,11 +24,13 @@ const int COMMAND_RUN                               = B00000110;
 const int COMMAND_CANCEL                            = B00000111;
 const int COMMAND_RESET                             = B00001000;
 const int COMMAND_FINISHED                          = B00001001;
+const int COMMAND_DUMMY                             = B00111111;
 const int COMMAND_ECHO                              = B10001001;
 const int COMMAND_LOG_INFO                          = B11001010;
 const int COMMAND_LOG_DEBUG                         = B11001011;
 const int COMMAND_LOG_ERROR                         = B11001100;
 const int COMMAND_LOG_OFF                           = B10001110;
+
 
 
 const int MESSAGE_BYTE=1;
@@ -60,6 +62,8 @@ const int MESSAGE_READ_CHECKSUM=26;
 const int MESSAGE_CHECKSUM_ERROR=27;
 const int MESSAGE_CHECKSUM_OK=28;
 const int MESSAGE_MAX_ACTION_COUNT=29;
+const int MESSAGE_DUMMY=99;
+
 
 
 

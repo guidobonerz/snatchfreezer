@@ -299,11 +299,11 @@ public class SnatchFreezerController implements Initializable {
 	private void buildData() {
 		commandList = new ArrayList<byte[]>();
 
-		addSetLogLevel(DEBUG);
+		addSetLogLevel(INFO);
 		addEcho("Hello Snatchfreezer");
 		addReset();
 		addAction(2);
-		addActionTimings(200, 200, 0, 0);
+		addActionTimings(2000, 2000, 0, 0);
 
 		/*
 		 * addAction(3); addActionTimings(500, 500, 0, 0); addActionTimings(500, 500, 0,
@@ -882,15 +882,15 @@ public class SnatchFreezerController implements Initializable {
 							break;
 						}
 						case COMMAND_DUMMY: {
-
+							//System.out.println("dummy");
 							break;
 						}
 						case COMMAND_FINISHED: {
 							setActionButtonDisabled(false);
 							actionButton.setStyle("-fx-base: #00ff00;");
 							System.out.println("Finished");
-							transmissionIndicator.setProgress(0f);
-							cycleIndicator.setProgress(0f);
+							//transmissionIndicator.setProgress(0f);
+							//cycleIndicator.setProgress(0f);
 							break;
 						}
 						case COMMAND_CANCEL: {

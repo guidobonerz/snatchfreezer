@@ -14,7 +14,12 @@ void Log::debug(uint8_t messageId) {
     buffer[3] = 1;
     buffer[4] = messageId;
     Serial.write(buffer, 5);
+    Serial.flush();
   } 
+  else
+  {
+    Log::sendDummy();
+  }
 }
 
 
@@ -27,6 +32,11 @@ void Log::info(uint8_t messageId) {
     buffer[3] = 1;
     buffer[4] = messageId;
     Serial.write(buffer, 5);
+    Serial.flush();
+  }
+  else
+  {
+    Log::sendDummy();
   }
 }
 
@@ -39,7 +49,22 @@ void Log::error(uint8_t messageId) {
     buffer[3] = 1;
     buffer[4] = messageId;
     Serial.write(buffer, 5);
+    Serial.flush();
   }
+  else
+  {
+    Log::sendDummy();
+  }
+}
+
+void Log::sendDummy()
+{
+    buffer[0] = SYNCBYTE1;
+    buffer[1] = SYNCBYTE2;
+    buffer[2] = COMMAND_DUMMY;
+    buffer[3] = 0;
+    Serial.write(buffer, 4);
+    Serial.flush();
 }
 
 void Log::echo(String s)
@@ -53,14 +78,12 @@ void Log::echo(String s)
       buffer[4 + i] = { s.charAt(i) };
     }
   Serial.write(buffer, 4 + s.length());
-  //Serial.flush();
+  Serial.flush();
 }
 
 void Log::setLogLevel(int level)
 {
   logLevel = level;
-  //String s = String("LogLevel:" + getLogLevel());
-  
 }
 
 int Log::getLogLevel()

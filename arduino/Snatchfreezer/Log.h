@@ -15,5 +15,6 @@ public:
 	static void debug(uint8_t messageId);
   static void info(uint8_t messageId);
 	static void error(uint8_t messageId);
+  static void sendDummy();
 	static void echo(String s);
 };
