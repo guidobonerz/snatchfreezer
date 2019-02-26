@@ -1,5 +1,59 @@
 package de.drazil.snatchfreezer;
 
+import static de.drazil.snatchfreezer.Constants.COMMAND_CANCEL;
+import static de.drazil.snatchfreezer.Constants.COMMAND_DUMMY;
+import static de.drazil.snatchfreezer.Constants.COMMAND_ECHO;
+import static de.drazil.snatchfreezer.Constants.COMMAND_FINISHED;
+import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_DEBUG;
+import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_ERROR;
+import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_INFO;
+import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_OFF;
+import static de.drazil.snatchfreezer.Constants.COMMAND_NEXT;
+import static de.drazil.snatchfreezer.Constants.COMMAND_REPEAT;
+import static de.drazil.snatchfreezer.Constants.COMMAND_RESET;
+import static de.drazil.snatchfreezer.Constants.COMMAND_RUN;
+import static de.drazil.snatchfreezer.Constants.COMMAND_SET_CYCLE_COUNT;
+import static de.drazil.snatchfreezer.Constants.EXECUTE_COMMAND;
+import static de.drazil.snatchfreezer.Constants.INFO;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_ADD_ACTION;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_ADD_ACTION_TIMIMGS;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_BYTE;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_CANCEL;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_CHECKSUM_ERROR;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_CHECKSUM_OK;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_DWORD;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_ECHO;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_MAX_ACTION_COUNT;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_NO_PARAMETER;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_NUMBER_PARAMETER;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_CHECKSUM;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_COMMAND;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_DATA;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_LENGTH;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_RESET;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_RUN;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_DELAY;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_DELAY_INCREMENT;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_PIN;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_RELEASE;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_RELEASE_INCREMENT;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_CYCLE_COUNT;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_CYCLE_DELAY;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_LOG_LEVEL;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_STRING_PARAMETER;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SYNC1;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SYNC2;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_WORD;
+import static de.drazil.snatchfreezer.Constants.PARAMETER_NUMBER;
+import static de.drazil.snatchfreezer.Constants.PARAMETER_STRING;
+import static de.drazil.snatchfreezer.Constants.READ_COMMAND;
+import static de.drazil.snatchfreezer.Constants.READ_DATA;
+import static de.drazil.snatchfreezer.Constants.READ_DATA_PREFIX;
+import static de.drazil.snatchfreezer.Constants.READ_LENGTH;
+import static de.drazil.snatchfreezer.Constants.SYNCBYTE1;
+import static de.drazil.snatchfreezer.Constants.SYNCBYTE2;
+import static de.drazil.snatchfreezer.Constants.TABLE_MAX_ROWS;
+
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -47,8 +101,6 @@ import javafx.stage.FileChooser;
 
 public class SnatchFreezerController implements Initializable {
 
-	private final static int TABLE_MAX_ROWS = 5;
-
 	// cccccctt-llllllll-dddddddd...
 	// type = ttt
 	// 00 000000 = no parameter
@@ -85,108 +137,19 @@ public class SnatchFreezerController implements Initializable {
 	// new protocol frame
 	// SYNC1|SYNC2|COMMAND|PARAMETER_COUNT|PARAMETER_TYPE1|PARAMETER_LENGTH1|VALUE1|..|CHECKSUM
 
-	private final static int PARAMETER_NO = 0b00000000;
-	private final static int PARAMETER_STRING = 0b10000000;
-	private final static int PARAMETER_NUMBER = 0b11000000;
-	private final static int SYNCBYTE1 = 0xaa;
-	private final static int SYNCBYTE2 = 0x55;
-	private final static int COMMAND_SET_ACTION_PIN = 0b11000001;
-	private final static int COMMAND_SET_ACTION_DELAY_TIME = 0b11000010;
-	private final static int COMMAND_SET_ACTION_RELEASE_TIME = 0b11000011;
-	private final static int COMMAND_SET_ACTION_DELAY_INCREMENT_TIME = 0b11000100;
-	private final static int COMMAND_SET_ACTION_RELEASE_INCREMENT_TIME = 0b11000101;
-	private final static int COMMAND_SET_CYCLE_COUNT = 0b11000110;
-	private final static int COMMAND_SET_CYCLE_DELAY = 0b11000111;
-	private final static int COMMAND_FLUSH = 0b11001001;
-	private final static int COMMAND_TEST = 0b11001010;
-	private final static int COMMAND_ADD_ACTION = 0b00000001;
-	private final static int COMMAND_ADD_ACTION_TIMINGS = 0b00000010;
-	private final static int COMMAND_NEXT = 0b00000011;
-	private final static int COMMAND_REPEAT = 0b00000100;
-	private final static int COMMAND_SET_LOG_LEVEL = 0b11001011;
-	private final static int COMMAND_RUN = 0b00000110;
-	private final static int COMMAND_CANCEL = 0b00000111;
-	private final static int COMMAND_RESET = 0b00001000;
-	private final static int COMMAND_FINISHED = 0b00001001;
-	private final static int COMMAND_DUMMY = 0b00111111;
-	private final static int COMMAND_ECHO = 0b10001001;
-	private final static int COMMAND_LOG_INFO = 0b11001010;
-	private final static int COMMAND_LOG_DEBUG = 0b11001011;
-	private final static int COMMAND_LOG_ERROR = 0b11001100;
-	private final static int COMMAND_LOG_OFF = 0b10001110;
-
-	private final static int MESSAGE_BYTE = 1;
-	private final static int MESSAGE_WORD = 2;
-	private final static int MESSAGE_DWORD = 3;
-	private final static int MESSAGE_STRING_PARAMETER = 4;
-	private final static int MESSAGE_NUMBER_PARAMETER = 5;
-	private final static int MESSAGE_NO_PARAMETER = 6;
-	private final static int MESSAGE_RUN = 7;
-	private final static int MESSAGE_RESET = 8;
-	private final static int MESSAGE_CANCEL = 9;
-	private final static int MESSAGE_ECHO = 10;
-	private final static int MESSAGE_SET_LOG_LEVEL = 11;
-	private final static int MESSAGE_ADD_ACTION = 12;
-	private final static int MESSAGE_SET_ACTION_PIN = 13;
-	private final static int MESSAGE_ADD_ACTION_TIMIMGS = 14;
-	private final static int MESSAGE_SET_ACTION_DELAY = 15;
-	private final static int MESSAGE_SET_ACTION_DELAY_INCREMENT = 16;
-	private final static int MESSAGE_SET_ACTION_RELEASE = 17;
-	private final static int MESSAGE_SET_ACTION_RELEASE_INCREMENT = 18;
-	private final static int MESSAGE_SET_CYCLE_COUNT = 19;
-	private final static int MESSAGE_SET_CYCLE_DELAY = 20;
-	private final static int MESSAGE_SYNC1 = 21;
-	private final static int MESSAGE_SYNC2 = 22;
-	private final static int MESSAGE_READ_COMMAND = 23;
-	private final static int MESSAGE_READ_LENGTH = 24;
-	private final static int MESSAGE_READ_DATA = 25;
-	private final static int MESSAGE_READ_CHECKSUM = 26;
-	private final static int MESSAGE_CHECKSUM_ERROR = 27;
-	private final static int MESSAGE_CHECKSUM_OK = 28;
-	private final static int MESSAGE_MAX_ACTION_COUNT = 29;
-
-	private final static int READ_DATA_PREFIX = 10;
-	private final static int READ_COMMAND = 20;
-	private final static int READ_LENGTH = 30;
-	private final static int READ_DATA = 40;
-	private final static int EXECUTE_COMMAND = 50;
-
-	private final static int DEBUG = 1;
-	private final static int INFO = 2;
-	private final static int ERROR = 3;
-	private final static int OFF = 99;
-
-	// private final static int READ_DATA_NEXT = 50;
-	// private final static int COMMAND_RESET = 0;
-	// private final static int COMMAND_GET_NEXT_DATA_RECEIVED = 200;
-	// private final static int COMMAND_CONFIGURE_RECEIVED = 300;
-	// private final static int COMMAND_FINISHED_RECEIVED = 400;
-	// private final static int COMMAND_DISPLAY_VALUE_RECEIVED = 500;
-	// private final static int COMMAND_COUNTCYCLE_RECEIVED = 600;
 	private int syncCount = 0;
-	private boolean prefixSynced = false;
-	private boolean suffixSynced = false;
 	private int phase;
-	private int serialCommand;
 	private int value;
-	private List<byte[]> commandList = null;
+
 	private Iterator<byte[]> dataIterator;
-	private int count;
 	private int dataIndex;
-	private byte dataBuffer[] = new byte[] { 0, 0, 0, 0 };
 	private byte readDataBuffer[] = null;
 	private File file = null;
-	private int progressCount;
-	private String actionButtonText = "Action";
-	private int cycleCount = 0;
 	private int dataLength = 0;
 	private int currentCommand = 0;
-	private boolean commandReady = false;
-	private boolean isParsing = false;
 	private int lastAvailableBytes = 0;
 	private int availableBytes = 0;
 	private byte byteBuffer[] = new byte[] {};
-	// private byte sendBuffer[] = new byte[] {};
 	private int readIndex = 0;
 	private boolean canceled = false;
 	private byte currentCommandBuffer[];
@@ -280,10 +243,11 @@ public class SnatchFreezerController implements Initializable {
 	private ObservableList<ActionItemBean> valve4List;
 
 	private String ttyDevice = null;
+	private ConfigurationBuilder cb = null;
 
 	public SnatchFreezerController() {
 		super();
-		// TODO Auto-generated constructor stub
+		cb = new ConfigurationBuilder();
 	}
 
 	/*
@@ -300,177 +264,18 @@ public class SnatchFreezerController implements Initializable {
 	}
 
 	private void buildData() {
-		commandList = new ArrayList<byte[]>();
+		cb.reset();
+		cb.addSetLogLevel(INFO);
+		cb.addEcho("Hello Snatchfreezer");
+		cb.addReset();
+		cb.addAction(2);
+		cb.addActionTimings(2000, 2000, 0, 0);
 
-		addSetLogLevel(INFO);
-		addEcho("Hello Snatchfreezer");
-		addReset();
-		addAction(2);
-		addActionTimings(2000, 2000, 0, 0);
-
-		/*
-		 * addAction(3); addActionTimings(500, 500, 0, 0); addActionTimings(500, 500, 0,
-		 * 0);
-		 * 
-		 * addAction(4); addActionTimings(400, 600, 0, 0);
-		 * 
-		 * addAction(5); addActionTimings(600, 400, 0, 0);
-		 * 
-		 * addAction(6); addActionTimings(800, 200, 0, 0); addActionTimings(100, 50, 0,
-		 * 0);
-		 * 
-		 * addAction(7); addActionTimings(1000, 1000, 0, 0);
-		 */
-		addCycleCount(maxCycles.getValue());
-		addCycleDelay(new Long(cycleDelayTextField.getText()));
-		addRun();
-
+		cb.addCycleCount(maxCycles.getValue());
+		cb.addCycleDelay(new Long(cycleDelayTextField.getText()));
+		cb.addRun();
 	}
 
-	private void addEcho(String text) {
-		byte[] ba = NumericConverter.toByteArray(COMMAND_ECHO, 1);
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) text.length(), 1));
-		ba = ArrayUtil.add(ba, ArrayUtil.getByteArrayFromString(text));
-		commandList.add(getCommand(ba));
-	}
-
-	private void addRun() {
-		commandList.add(getCommand(NumericConverter.toByteArray(COMMAND_RUN, 1)));
-	}
-
-	private void sendCancel() {
-		commandList.add(getCommand(NumericConverter.toByteArray(COMMAND_CANCEL, 1)));
-	}
-
-	private void addReset() {
-		commandList.add(getCommand(NumericConverter.toByteArray(COMMAND_RESET, 1)));
-	}
-
-	private void addSetLogLevel(int logLevel) {
-		byte[] ba = NumericConverter.toByteArray(COMMAND_SET_LOG_LEVEL, 1);
-		ba = ArrayUtil.add(ba, new byte[] { 1 });
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(logLevel, 1));
-		commandList.add(getCommand(ba));
-	}
-
-	public void addAction(int pin) {
-		commandList.add(getCommand(NumericConverter.toByteArray(COMMAND_ADD_ACTION, 1)));
-		byte[] ba = NumericConverter.toByteArray(COMMAND_SET_ACTION_PIN, 1);
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 1));
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(pin, 1));
-		commandList.add(getCommand(ba));
-	}
-
-	public void addActionTimings(long startDelay, long releaseDelay, long delayIncrement, long releaseIncrement) {
-		commandList.add(getCommand(NumericConverter.toByteArray(COMMAND_ADD_ACTION_TIMINGS, 1)));
-		byte ba[] = NumericConverter.toByteArray(COMMAND_SET_ACTION_DELAY_TIME, 1);
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 4));
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(startDelay, 4));
-		commandList.add(getCommand(ba));
-		ba = NumericConverter.toByteArray(COMMAND_SET_ACTION_RELEASE_TIME, 1);
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 4));
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(releaseDelay, 4));
-		commandList.add(getCommand(ba));
-		ba = NumericConverter.toByteArray(COMMAND_SET_ACTION_DELAY_INCREMENT_TIME, 1);
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 4));
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(delayIncrement, 4));
-		commandList.add(getCommand(ba));
-		ba = NumericConverter.toByteArray(COMMAND_SET_ACTION_RELEASE_INCREMENT_TIME, 1);
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 4));
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(releaseIncrement, 4));
-		commandList.add(getCommand(ba));
-
-	}
-
-	public void addCycleCount(int cycleCount) {
-		byte[] ba = NumericConverter.toByteArray(COMMAND_SET_CYCLE_COUNT, 1);
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 1));
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(cycleCount, 1));
-		commandList.add(getCommand(ba));
-	}
-
-	public void addCycleDelay(long cycleDelay) {
-		byte[] ba = NumericConverter.toByteArray(COMMAND_SET_CYCLE_DELAY, 1);
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 4));
-		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(cycleDelay, 4));
-		commandList.add(getCommand(ba));
-	}
-
-	/*
-	 * private void buildData() { int size = 0; dataList = new ArrayList<>();
-	 * dataList
-	 * .add(getDataBlock(NumericConverter.toByteArray(TextfieldUtil.getLongValue
-	 * (cyclesTextField), 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray
-	 * (TextfieldUtil.getLongValue(cycleDelayTextField), 4)));
-	 * dataList.add(getDataBlock
-	 * (NumericConverter.toByteArray(TextfieldUtil.getLongValue
-	 * (cameraTriggerDelayTextField), 4)));
-	 * dataList.add(getDataBlock(NumericConverter
-	 * .toByteArray(TextfieldUtil.getLongValue(cameraTriggerReleaseTextField), 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(TextfieldUtil
-	 * .getLongValue(flash1TriggerDelayTextField), 4))); dataList.add(getDataBlock
-	 * (NumericConverter.toByteArray(TextfieldUtil.getLongValue
-	 * (flash2TriggerDelayTextField), 4)));
-	 * 
-	 * // valve1 dataList.add(getDataBlock(NumericConverter.toByteArray(action1Pin
-	 * .getValue().getPin(), 1))); size = valve1List.size();
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int i
-	 * = 0; i < size; i++) { ActionItemBean bean = valve1List.get(i);
-	 * 
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(), 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
-	 * 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
-	 * 1))); }
-	 * 
-	 * // filler for (int i = 0; i < TABLE_MAX_ROWS - size; i++) {
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); }
-	 * 
-	 * // valve2 dataList.add(getDataBlock(NumericConverter.toByteArray(action2Pin
-	 * .getValue().getPin(), 1))); size = valve2List.size();
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int i
-	 * = 0; i < size; i++) { ActionItemBean bean = valve2List.get(i);
-	 * 
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(), 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
-	 * 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
-	 * 1))); } // filler for (int i = 0; i < TABLE_MAX_ROWS - size; i++) {
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); } // valve3
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(action3Pin. getValue
-	 * ().getPin(), 1))); size = valve3List.size();
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int i
-	 * = 0; i < size; i++) { ActionItemBean bean = valve3List.get(i);
-	 * 
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(), 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
-	 * 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
-	 * 1))); } // filler for (int i = 0; i < TABLE_MAX_ROWS - size; i++) {
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); } // valve4
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(action4Pin. getValue
-	 * ().getPin(), 1))); size = valve4List.size();
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(size, 1))); for (int i
-	 * = 0; i < size; i++) { ActionItemBean bean = valve4List.get(i);
-	 * 
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getDelay(), 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRelease(),
-	 * 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(bean.getRepeats(),
-	 * 1))); } // filler for (int i = 0; i < TABLE_MAX_ROWS - size; i++) {
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 4)));
-	 * dataList.add(getDataBlock(NumericConverter.toByteArray(0, 1))); }
-	 * 
-	 * dataList.add(getFinalBlock()); }
-	 */
 	private void setConfiguration(ConfigurationBean configurationBean) {
 		valve1List = valve1Grid.getItems();
 		valve2List = valve2Grid.getItems();
@@ -746,11 +551,10 @@ public class SnatchFreezerController implements Initializable {
 			serialSelectChoiceBox.setValue(ttyDevice);
 			serialPort = serialPorts[0];
 		}
-
 	}
 
 	private void initializeSerialConnection() {
-		serialPort.setBaudRate(57600);// 57600
+		serialPort.setBaudRate(57600);
 		serialPort.openPort();
 		serialPort.addDataListener(new SerialPortDataListener() {
 			@Override
@@ -1199,15 +1003,15 @@ public class SnatchFreezerController implements Initializable {
 
 	private boolean sendNextCommand() throws Exception {
 		if (dataIterator == null) {
-			dataIterator = commandList.iterator();
+			dataIterator = cb.getIterator();
 		}
 		boolean hasNext = dataIterator.hasNext();
 		if (hasNext) {
 			System.out.println("Send Command");
 			currentCommandBuffer = dataIterator.next();
-			int index = commandList.indexOf(currentCommandBuffer);
+			int index = cb.indexOfCommand(currentCommandBuffer);
 
-			double d = (double) index / commandList.size();
+			double d = (double) index / cb.getCommandListSize();
 
 			transmissionIndicator.setProgress(d);
 
@@ -1226,22 +1030,6 @@ public class SnatchFreezerController implements Initializable {
 		serialPort.writeBytes(currentCommandBuffer, currentCommandBuffer.length);
 		serialPort.getOutputStream().flush();
 
-	}
-
-	public byte[] getCommand(byte byteArray[]) {
-		byte[] ba = ArrayUtil.add(new byte[] { (byte) 0xaa, (byte) 0x55 }, byteArray);
-		ba = ArrayUtil.add(ba, new byte[] { ArrayUtil.getChecksum(ba) });
-		return ba;
-	}
-
-	/*
-	 * public byte[] getFinalBlock() { return new byte[] { (byte) 0xaa, (byte) 0x55,
-	 * (byte) 0b01110000 }; }
-	 */
-	private long getValue(byte buffer[]) {
-		long value = NumericConverter.toLong(buffer);
-		dataBuffer = new byte[] { 0, 0, 0, 0 };
-		return value;
 	}
 
 	private void saveConfiguration(File file) {
