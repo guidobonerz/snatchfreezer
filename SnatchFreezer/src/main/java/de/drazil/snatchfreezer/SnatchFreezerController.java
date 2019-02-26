@@ -13,8 +13,9 @@ import static de.drazil.snatchfreezer.Constants.COMMAND_REPEAT;
 import static de.drazil.snatchfreezer.Constants.COMMAND_RESET;
 import static de.drazil.snatchfreezer.Constants.COMMAND_RUN;
 import static de.drazil.snatchfreezer.Constants.COMMAND_SET_CYCLE_COUNT;
+import static de.drazil.snatchfreezer.Constants.DEBUG;
 import static de.drazil.snatchfreezer.Constants.EXECUTE_COMMAND;
-import static de.drazil.snatchfreezer.Constants.INFO;
+import static de.drazil.snatchfreezer.Constants.MAX_ACTUATOR_TIMING_SETS;
 import static de.drazil.snatchfreezer.Constants.MESSAGE_ADD_ACTION;
 import static de.drazil.snatchfreezer.Constants.MESSAGE_ADD_ACTION_TIMIMGS;
 import static de.drazil.snatchfreezer.Constants.MESSAGE_BYTE;
@@ -52,7 +53,6 @@ import static de.drazil.snatchfreezer.Constants.READ_DATA_PREFIX;
 import static de.drazil.snatchfreezer.Constants.READ_LENGTH;
 import static de.drazil.snatchfreezer.Constants.SYNCBYTE1;
 import static de.drazil.snatchfreezer.Constants.SYNCBYTE2;
-import static de.drazil.snatchfreezer.Constants.MAX_ACTUATOR_TIMING_SETS;
 
 import java.io.File;
 import java.net.URL;
@@ -265,15 +265,15 @@ public class SnatchFreezerController implements Initializable {
 
 	private void buildData() {
 		cb.reset();
-		cb.addSetLogLevel(INFO);
+		cb.addSetLogLevel(DEBUG);
 		cb.addEcho("Hello Snatchfreezer");
 		cb.addReset();
 		cb.addAction(2);
 		cb.addActionTimings(1000000, 1000000, 0, 0);
-		//cb.addAction(3);
-		//cb.addActionTimings(3000000, 1000000, 0, 0);
-		//cb.addAction(4);
-		//cb.addActionTimings(5000000, 1000000, 0, 0);
+		// cb.addAction(3);
+		// cb.addActionTimings(3000000, 1000000, 0, 0);
+		// cb.addAction(4);
+		// cb.addActionTimings(5000000, 1000000, 0, 0);
 		cb.addCycleCount(maxCycles.getValue());
 		cb.addCycleDelay(new Long(cycleDelayTextField.getText()));
 		cb.addRun();

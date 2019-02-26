@@ -160,7 +160,7 @@ void loop()
       }
     case PHASE_RUN_PROGRAM:
       {
-        if (!nextCycle && millis() >= targetCycleDelayTime)
+        if (!nextCycle /*&& millis() >= targetCycleDelayTime*/)
         {
           SerialHelper::setCycleCount(currentCycleCount + 1);
           nextCycle = true;
@@ -181,7 +181,7 @@ void loop()
               if (!actionTimer[i].started && micros() >= actionTimer[i].targetTime)
               {
                 actionTimer[i].started = true;
-                inc = actionTimer[i].releaseCycleIncrement[actionTimer[i].timerCount] * currentCycleCount;
+                inc = actionTimer[i].releaseCycleIncrement[actionTimer[i].timerCount] * 0;//currentCycleCount;
                 actionTimer[i].targetTime = micros() + actionTimer[i].releaseStartTime[actionTimer[i].timerCount] + inc;
 
                 digitalWrite(actionTimer[i].pin, HIGH);
@@ -191,7 +191,7 @@ void loop()
               {
                 digitalWrite(actionTimer[i].pin, LOW);
                 actionTimer[i].started = false;
-                inc = actionTimer[i].delayCycleIncrement[actionTimer[i].timerCount] * currentCycleCount;
+                inc = actionTimer[i].delayCycleIncrement[actionTimer[i].timerCount] * 0;//currentCycleCount;
                 actionTimer[i].targetTime = micros() + actionTimer[i].delayStartTime[actionTimer[i].timerCount] + inc;
                 if (actionTimer[i].timerCount < actionTimer[i].maxTimerCount)
                 {
@@ -209,7 +209,7 @@ void loop()
           if (completeCount > maxActionCount - 1)
           {
             //Log::echo("max action count");
-            targetCycleDelayTime = millis()+ cycleDelayTime;
+            targetCycleDelayTime = millis() + cycleDelayTime;
             nextCycle = false;
             completeCount = 0;
             currentCycleCount++;
