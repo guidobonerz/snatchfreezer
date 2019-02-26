@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fazecast.jSerialComm.SerialPort;
@@ -882,15 +885,23 @@ public class SnatchFreezerController implements Initializable {
 							break;
 						}
 						case COMMAND_DUMMY: {
-							//System.out.println("dummy");
+							// System.out.println("dummy");
 							break;
 						}
 						case COMMAND_FINISHED: {
-							setActionButtonDisabled(false);
-							actionButton.setStyle("-fx-base: #00ff00;");
-							System.out.println("Finished");
-							//transmissionIndicator.setProgress(0f);
-							//cycleIndicator.setProgress(0f);
+
+							final ScheduledExecutorService executorService = Executors
+									.newSingleThreadScheduledExecutor();
+							executorService.schedule(new Runnable() {
+								@Override
+								public void run() {
+									setActionButtonDisabled(false);
+									transmissionIndicator.setProgress(0f);
+									cycleIndicator.setProgress(0f);
+									actionButton.setStyle("-fx-base: #00ff00;");
+									System.out.println("Finished");
+								}
+							}, 1, TimeUnit.SECONDS);
 							break;
 						}
 						case COMMAND_CANCEL: {
