@@ -1,7 +1,8 @@
 package de.drazil.snatchfreezer;
 
 public class Constants {
-	public final static int TABLE_MAX_ROWS = 5;
+	
+	public final static int MAX_ACTUATOR_TIMING_SETS = 5;
 	public final static int PARAMETER_NO = 0b00000000;
 	public final static int PARAMETER_STRING = 0b10000000;
 	public final static int PARAMETER_NUMBER = 0b11000000;

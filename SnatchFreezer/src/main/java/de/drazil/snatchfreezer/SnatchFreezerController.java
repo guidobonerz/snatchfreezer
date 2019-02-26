@@ -52,7 +52,7 @@ import static de.drazil.snatchfreezer.Constants.READ_DATA_PREFIX;
 import static de.drazil.snatchfreezer.Constants.READ_LENGTH;
 import static de.drazil.snatchfreezer.Constants.SYNCBYTE1;
 import static de.drazil.snatchfreezer.Constants.SYNCBYTE2;
-import static de.drazil.snatchfreezer.Constants.TABLE_MAX_ROWS;
+import static de.drazil.snatchfreezer.Constants.MAX_ACTUATOR_TIMING_SETS;
 
 import java.io.File;
 import java.net.URL;
@@ -269,8 +269,11 @@ public class SnatchFreezerController implements Initializable {
 		cb.addEcho("Hello Snatchfreezer");
 		cb.addReset();
 		cb.addAction(2);
-		cb.addActionTimings(2000, 2000, 0, 0);
-
+		cb.addActionTimings(1000000, 1000000, 0, 0);
+		//cb.addAction(3);
+		//cb.addActionTimings(3000000, 1000000, 0, 0);
+		//cb.addAction(4);
+		//cb.addActionTimings(5000000, 1000000, 0, 0);
 		cb.addCycleCount(maxCycles.getValue());
 		cb.addCycleDelay(new Long(cycleDelayTextField.getText()));
 		cb.addRun();
@@ -380,7 +383,7 @@ public class SnatchFreezerController implements Initializable {
 		menubar.setUseSystemMenuBar(true);
 
 		cycleDelayTextField.setPromptText("cycleDelayTime");
-		cycleDelayTextField.setText("1000");
+		cycleDelayTextField.setText("100");
 
 		ActionPinBean action1Bean = new ActionPinBean(100, false, "N/A");
 		ActionPinBean action2Bean = new ActionPinBean(12, false, "OUTPUT 1");
@@ -455,7 +458,7 @@ public class SnatchFreezerController implements Initializable {
 		valve1AddButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent ev) {
-				if (valve1List.size() < TABLE_MAX_ROWS) {
+				if (valve1List.size() < MAX_ACTUATOR_TIMING_SETS) {
 					valve1List.add(new ActionItemBean(0, 0, 0, 0));
 				}
 			}
@@ -473,7 +476,7 @@ public class SnatchFreezerController implements Initializable {
 		valve2AddButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent ev) {
-				if (valve2List.size() < TABLE_MAX_ROWS) {
+				if (valve2List.size() < MAX_ACTUATOR_TIMING_SETS) {
 					valve2List.add(new ActionItemBean(0, 0, 0, 0));
 				}
 			}
@@ -491,7 +494,7 @@ public class SnatchFreezerController implements Initializable {
 		valve3AddButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent ev) {
-				if (valve3List.size() < TABLE_MAX_ROWS) {
+				if (valve3List.size() < MAX_ACTUATOR_TIMING_SETS) {
 					valve3List.add(new ActionItemBean(0, 0, 0, 0));
 				}
 			}
@@ -509,7 +512,7 @@ public class SnatchFreezerController implements Initializable {
 		valve4AddButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent ev) {
-				if (valve4List.size() < TABLE_MAX_ROWS) {
+				if (valve4List.size() < MAX_ACTUATOR_TIMING_SETS) {
 					valve4List.add(new ActionItemBean(0, 0, 0, 0));
 				}
 			}
@@ -705,7 +708,7 @@ public class SnatchFreezerController implements Initializable {
 									actionButton.setStyle("-fx-base: #00ff00;");
 									System.out.println("Finished");
 								}
-							}, 1, TimeUnit.SECONDS);
+							}, 0, TimeUnit.SECONDS);
 							break;
 						}
 						case COMMAND_CANCEL: {

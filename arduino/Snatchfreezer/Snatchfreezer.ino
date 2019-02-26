@@ -29,7 +29,7 @@ uint8_t currentCycleCount = 0;
 uint8_t calculatedChecksum = 0;
 uint8_t retries = 0;
 uint8_t currentRow = 0;
-uint32_t maxCycleDelay = 0;
+uint32_t cycleDelayTime = 0;
 uint32_t targetCycleDelayTime = 0;
 uint32_t inc = 0;
 
@@ -71,7 +71,7 @@ void clearActions()
 
 void  resetStartTime()
 {
-  uint32_t startMillis = millis();
+  uint32_t startMillis = micros();
   for (uint8_t i = 0; i < arraySize(actionTimer); i++)
   {
     actionTimer[i].targetTime =  startMillis + actionTimer[i].delayStartTime[0];
@@ -134,7 +134,7 @@ void setCycleCount(uint8_t cycleCount)
 
 void setCycleDelay(uint32_t cycleDelay)
 {
-  maxCycleDelay = cycleDelay;
+  cycleDelayTime = cycleDelay;
 }
 
 void loop()
@@ -148,7 +148,7 @@ void loop()
           delay(1);
           uint8_t b = (uint8_t)Serial.read();
           parse(b);
-          
+
         }
 
         break;
@@ -208,7 +208,8 @@ void loop()
 
           if (completeCount > maxActionCount - 1)
           {
-            targetCycleDelayTime = millis() + maxCycleDelay;
+            //Log::echo("max action count");
+            targetCycleDelayTime = millis()+ cycleDelayTime;
             nextCycle = false;
             completeCount = 0;
             currentCycleCount++;
@@ -219,6 +220,7 @@ void loop()
 
         if (currentCycleCount >= maxCycleCount)
         {
+          //Log::echo("max cycle count");
           currentCycleCount = 0;
           digitalWrite(ACTIVE_PIN, LOW);
           SerialHelper::finished();
