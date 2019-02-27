@@ -383,7 +383,7 @@ public class SnatchFreezerController implements Initializable {
 		menubar.setUseSystemMenuBar(true);
 
 		cycleDelayTextField.setPromptText("cycleDelayTime");
-		cycleDelayTextField.setText("100");
+		cycleDelayTextField.setText("1");
 
 		ActionPinBean action1Bean = new ActionPinBean(100, false, "N/A");
 		ActionPinBean action2Bean = new ActionPinBean(12, false, "OUTPUT 1");
@@ -708,7 +708,7 @@ public class SnatchFreezerController implements Initializable {
 									actionButton.setStyle("-fx-base: #00ff00;");
 									System.out.println("Finished");
 								}
-							}, 0, TimeUnit.SECONDS);
+							}, 500, TimeUnit.MILLISECONDS);
 							break;
 						}
 						case COMMAND_CANCEL: {
