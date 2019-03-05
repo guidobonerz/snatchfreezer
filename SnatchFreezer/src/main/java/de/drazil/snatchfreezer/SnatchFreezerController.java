@@ -13,7 +13,6 @@ import static de.drazil.snatchfreezer.Constants.COMMAND_REPEAT;
 import static de.drazil.snatchfreezer.Constants.COMMAND_RESET;
 import static de.drazil.snatchfreezer.Constants.COMMAND_RUN;
 import static de.drazil.snatchfreezer.Constants.COMMAND_SET_CYCLE_COUNT;
-import static de.drazil.snatchfreezer.Constants.DEBUG;
 import static de.drazil.snatchfreezer.Constants.EXECUTE_COMMAND;
 import static de.drazil.snatchfreezer.Constants.MAX_ACTUATOR_TIMING_SETS;
 import static de.drazil.snatchfreezer.Constants.MESSAGE_ADD_ACTION;
@@ -45,6 +44,7 @@ import static de.drazil.snatchfreezer.Constants.MESSAGE_STRING_PARAMETER;
 import static de.drazil.snatchfreezer.Constants.MESSAGE_SYNC1;
 import static de.drazil.snatchfreezer.Constants.MESSAGE_SYNC2;
 import static de.drazil.snatchfreezer.Constants.MESSAGE_WORD;
+import static de.drazil.snatchfreezer.Constants.OFF;
 import static de.drazil.snatchfreezer.Constants.PARAMETER_NUMBER;
 import static de.drazil.snatchfreezer.Constants.PARAMETER_STRING;
 import static de.drazil.snatchfreezer.Constants.READ_COMMAND;
@@ -73,6 +73,7 @@ import de.drazil.snatchfreezer.model.ActionBean;
 import de.drazil.snatchfreezer.model.ActionItemBean;
 import de.drazil.snatchfreezer.model.ActionPinBean;
 import de.drazil.snatchfreezer.model.ConfigurationBean;
+import de.drazil.snatchfreezer.model.ObservableActionItemBean;
 import de.drazil.util.ArrayUtil;
 import de.drazil.util.NumericConverter;
 import de.drazil.util.TextfieldUtil;
@@ -97,6 +98,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 
 public class SnatchFreezerController implements Initializable {
@@ -136,6 +138,9 @@ public class SnatchFreezerController implements Initializable {
 
 	// new protocol frame
 	// SYNC1|SYNC2|COMMAND|PARAMETER_COUNT|PARAMETER_TYPE1|PARAMETER_LENGTH1|VALUE1|..|CHECKSUM
+
+	@FXML
+	private AnchorPane ap;
 
 	private int syncCount = 0;
 	private int phase;
@@ -248,6 +253,7 @@ public class SnatchFreezerController implements Initializable {
 	public SnatchFreezerController() {
 		super();
 		cb = new ConfigurationBuilder();
+
 	}
 
 	/*
@@ -258,22 +264,31 @@ public class SnatchFreezerController implements Initializable {
 	 */
 	@Override
 	public void initialize(URL arg0, ResourceBundle arg1) {
+		System.out.println(ap);
 		initialzeSerialPortSelector();
 		initializeSerialConnection();
 		initializeUi();
+
 	}
 
 	private void buildData() {
 		cb.reset();
-		cb.addSetLogLevel(DEBUG);
-		cb.addEcho("Hello Snatchfreezer");
+		cb.addSetLogLevel(OFF);
 		cb.addReset();
 		cb.addAction(2);
-		cb.addActionTimings(1000000, 1000000, 0, 0);
-		// cb.addAction(3);
-		// cb.addActionTimings(3000000, 1000000, 0, 0);
-		// cb.addAction(4);
-		// cb.addActionTimings(5000000, 1000000, 0, 0);
+		cb.addActionTimings(500000, 500000, 500000, 100000);
+		cb.addActionTimings(500000, 500000, 100000, 500000);
+		cb.addAction(3);
+		cb.addActionTimings(1000000, 500000, 0, 0);
+		cb.addAction(4);
+		cb.addActionTimings(1500000, 500000, 0, 0);
+		cb.addAction(5);
+		cb.addActionTimings(2000000, 500000, 0, 0);
+		cb.addAction(6);
+		cb.addActionTimings(2500000, 500000, 0, 0);
+		cb.addAction(7);
+		cb.addActionTimings(3000000, 500000, 0, 0);
+
 		cb.addCycleCount(maxCycles.getValue());
 		cb.addCycleDelay(new Long(cycleDelayTextField.getText()));
 		cb.addRun();
@@ -329,21 +344,21 @@ public class SnatchFreezerController implements Initializable {
 		cameraActionBean.setPinIndex(0);
 		List<ActionItemBean> cameraActionItemBeanList = new ArrayList<>();
 		cameraActionItemBeanList.add(new ActionItemBean(TextfieldUtil.getLongValue(cameraTriggerDelayTextField),
-				TextfieldUtil.getLongValue(cameraTriggerReleaseTextField), 0, 0));
+				TextfieldUtil.getLongValue(cameraTriggerReleaseTextField), 0, 0, false));
 		cameraActionBean.setActionItemList(cameraActionItemBeanList);
 
 		ActionBean flash1TriggerActionBean = new ActionBean();
 		flash1TriggerActionBean.setPinIndex(0);
 		List<ActionItemBean> flash1TriggerItemBeanList = new ArrayList<>();
 		flash1TriggerItemBeanList
-				.add(new ActionItemBean(TextfieldUtil.getLongValue(flash1TriggerDelayTextField), 10, 0, 0));
+				.add(new ActionItemBean(TextfieldUtil.getLongValue(flash1TriggerDelayTextField), 10, 0, 0, false));
 		flash1TriggerActionBean.setActionItemList(flash1TriggerItemBeanList);
 
 		ActionBean flash2TriggerActionBean = new ActionBean();
 		flash2TriggerActionBean.setPinIndex(0);
 		List<ActionItemBean> flash2TriggerItemBeanList = new ArrayList<>();
 		flash2TriggerItemBeanList
-				.add(new ActionItemBean(TextfieldUtil.getLongValue(flash2TriggerDelayTextField), 10, 0, 0));
+				.add(new ActionItemBean(TextfieldUtil.getLongValue(flash2TriggerDelayTextField), 10, 0, 0, false));
 		flash2TriggerActionBean.setActionItemList(flash2TriggerItemBeanList);
 
 		ActionBean valve1ActionBean = new ActionBean();
@@ -459,7 +474,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve1List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					valve1List.add(new ActionItemBean(0, 0, 0, 0));
+					valve1List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -477,7 +492,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve2List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					valve2List.add(new ActionItemBean(0, 0, 0, 0));
+					valve2List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -495,7 +510,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve3List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					valve3List.add(new ActionItemBean(0, 0, 0, 0));
+					valve3List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -513,7 +528,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve4List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					valve4List.add(new ActionItemBean(0, 0, 0, 0));
+					valve4List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -1121,5 +1136,7 @@ public class SnatchFreezerController implements Initializable {
 			}
 		});
 	}
+
+	
 
 }

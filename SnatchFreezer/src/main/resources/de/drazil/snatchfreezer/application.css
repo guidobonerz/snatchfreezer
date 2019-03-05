@@ -1,21 +1,66 @@
-.root{
-    -fx-font-size: 10.0pt;
-    -fx-font-family: "Arial";
-    
+#pane, .root, .split-pane {
+	-fx-background-color: #353434;
+	-fx-foreground-color: #353434;
 }
 
-
-.text-field-table-cell
-{
--fx-padding:1 1 1 1;
+.button {
+	-fx-font-family: "Font Awesome 5 Free Solid";
+	-fx-font-size: 20px;
+	-fx-padding: 2;
+	-fx-insets: 3;
+	-fx-border-width: 0;
+	-fx-background-radius: 0;
+	-fx-border-style: none;
+	-fx-text-fill: white;
+	-fx-insets: 2;
+	-fx-background-color: transparent;
 }
 
-.text-field-table-cell .text-field
+.bigButtonIcon {
+	-fx-font-size: 40px;
+}
 
-{
--fx-background-color: white;
+.orangeButton {
+	-fx-text-fill: #ff8040;
+}
 
-    -fx-border-width: 0 0 0 0;
-    -fx-text-box-border: transparent;
-    -fx-padding: 2 2 2 2 ;
+.orangeButton:hover {
+	-fx-text-fill: #ffb693;
+}
+
+.blueButton {
+	-fx-text-fill: #16afe9;
+}
+
+.blueButton:hover {
+	-fx-text-fill: #81d3f3;
+}
+
+.yellowButton {
+	-fx-text-fill: #ffff00;
+}
+
+.yellowButton:hover {
+	-fx-text-fill: #ffffca;
+}
+
+.redButton {
+	-fx-text-fill: #ec0000;
+}
+
+.greenButton {
+	-fx-text-fill: #00df00;
+}
+.greenButton:hover {
+	-fx-text-fill: #77ff77;
+}
+.greyButton {
+	-fx-text-fill: #aaaaaa;
+}
+.greyButton:hover {
+	-fx-text-fill: #ffffff;
+}
+
+.darkButton {
+	-fx-text-fill: #353434;
 }
