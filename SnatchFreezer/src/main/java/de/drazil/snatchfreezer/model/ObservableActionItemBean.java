@@ -15,20 +15,21 @@ public class ObservableActionItemBean {
 		this(new Long(0), new Long(0), new Long(0), new Long(0), false);
 	}
 
-	public ObservableActionItemBean(long delay, long release, long delayIncrement, long releaseIncrement,
-			boolean ignore) {
+	public ObservableActionItemBean(final long delay, final long release, final long delayIncrement,
+			final long releaseIncrement, final boolean ignore) {
 		this.delay = new SimpleLongProperty(delay);
 		this.release = new SimpleLongProperty(release);
 		this.delayIncrement = new SimpleLongProperty(delayIncrement);
 		this.releaseIncrement = new SimpleLongProperty(releaseIncrement);
 		this.ignore = new SimpleBooleanProperty(ignore);
+
 	}
 
 	public Long getDelay() {
 		return delay.get();
 	}
 
-	public void setDelay(Long delay) {
+	public void setDelay(final Long delay) {
 		this.delay.set(delay);
 	}
 
@@ -36,7 +37,7 @@ public class ObservableActionItemBean {
 		return release.get();
 	}
 
-	public void setRelease(Long release) {
+	public void setRelease(final Long release) {
 		this.release.set(release);
 	}
 
@@ -44,7 +45,7 @@ public class ObservableActionItemBean {
 		return delayIncrement.get();
 	}
 
-	public void setDelayIncrement(Long delayIncrement) {
+	public void setDelayIncrement(final Long delayIncrement) {
 		this.delayIncrement.set(delayIncrement);
 	}
 
@@ -52,7 +53,7 @@ public class ObservableActionItemBean {
 		return releaseIncrement.get();
 	}
 
-	public void setReleaseIncrement(Long releaseIncrement) {
+	public void setReleaseIncrement(final Long releaseIncrement) {
 		this.releaseIncrement.set(releaseIncrement);
 	}
 
@@ -60,7 +61,7 @@ public class ObservableActionItemBean {
 		return ignore.get();
 	}
 
-	public void setIgnore(Boolean ignore) {
+	public void setIgnore(final Boolean ignore) {
 		this.ignore.set(ignore);
 	}
 }

@@ -1,7 +1,130 @@
 #pane, .root, .split-pane {
 	-fx-background-color: #353434;
 	-fx-foreground-color: #353434;
+	-fx-accent :#d0d0d0;
 }
+
+
+
+	
+
+.label-bright {
+	-fx-font-size: 11pt;
+	-fx-font-family: "Segoe UI Semibold";
+	-fx-text-fill: white;
+	-fx-opacity: 1;
+}
+
+.label-header {
+	-fx-font-size: 32pt;
+	-fx-font-family: "Segoe UI Light";
+	-fx-text-fill: white;
+	-fx-opacity: 1;
+}
+
+.table-view {
+	-fx-base: #353434;
+	-fx-control-inner-background: #353434;
+	-fx-background-color: #353434;
+	-fx-table-cell-border-color: transparent;
+	-fx-table-header-border-color: transparent;
+	-fx-padding: 5;
+}
+
+.table-view .column-header .label .table-row-cell {
+	-fx-font-size: 10pt;
+	-fx-font-family: "Segoe UI Semibold";
+	-fx-text-fill: red;
+	-fx-alignment: center-left;
+	-fx-opacity: 1;
+}
+
+.table-view:focused .table-row-cell:filled:focused:selected {
+	-fx-background-color: -fx-focus-color;
+	-fx-border-width: 0;
+	-fx-padding: 0;
+}
+
+.text-field-table-cell .text-field {
+	-fx-padding: 0;
+	-fx-border-width: 0;
+	-fx-background-color: #0080c0;
+	-fx-border-radius: 0 0 0 0;
+}
+
+.text-field {
+	-fx-accent: #ff0080;
+	-fx-padding: 0px;
+	-fx-border-insets: 0px;
+	-fx-background-insets: 0px;
+}
+
+.table-cell:focused {
+	-fx-padding: 0;
+	-fx-background-color: #0080c0;
+}
+
+.table-row-cell:empty {
+	-fx-background-color: transparent;
+}
+
+.table-row-cell:odd:filled {
+	-fx-background-color: #401500;
+}
+
+.table-row-cell:even:filled {
+	-fx-background-color: #000000;
+}
+
+.background {
+	-fx-background-color: #674A44;
+	-fx-foreground-color: #353434;
+}
+
+.menu-bar {
+    -fx-padding: 0 0 0 0; 
+    -fx-spacing: 0; 
+    -fx-base: derive(#d0d0d0,-70%);
+    -fx-background-color: #353434;
+    -fx-background-insets: 0, 0 0 0 0;
+    -fx-background-radius: 0, 0 ;
+}
+
+/* Show nothing for background of normal menu button in a menu bar */
+.menu-bar > .container > .menu-button {
+    -fx-background-radius: 0;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0; 
+}
+/* Change padding of menu buttons when in menu bar */
+.menu-bar > .container > .menu-button > .label {
+    -fx-padding: 1 1 1 1 /* 4 6 4 6*/
+}
+
+.menu-bar > .container > .menu-button:hover, .menu-bar > .container > .menu-button:focused, .menu-bar > .container > .menu-button:showing {
+    -fx-background: -fx-accent;
+    -fx-background-color: -fx-selection-bar;
+    -fx-text-fill: -fx-selection-bar-text;
+}
+
+/*.menu-bar .menu:focused:showing, .menu-bar .menu:showing, .menu-bar .menu:focused, .menu:focused:showing, .menu:showing, .menu:focused {*/
+/*.menu-bar .menu-button:showing, .menu-button:showing {
+    -fx-background: -fx-accent;
+    -fx-background-color: -fx-selection-bar;
+    -fx-text-fill: -fx-selection-bar-text;
+}*/
+
+.menu-bar > .container > .menu-button:hover {
+    -fx-background: -fx-accent;
+    -fx-background-color: -fx-selection-bar;
+    -fx-text-fill: -fx-selection-bar-text;
+}
+
+.menu-bar:show-mnemonics > .mnemonic-underline {
+    -fx-stroke: -fx-text-fill;
+}
+
+
 
 .button {
 	-fx-font-family: "Font Awesome 5 Free Solid";
@@ -25,7 +148,7 @@
 }
 
 .orangeButton:hover {
-	-fx-text-fill: #ffb693;
+	-fx-background-color: #5f5c5c;
 }
 
 .blueButton {
@@ -33,7 +156,7 @@
 }
 
 .blueButton:hover {
-	-fx-text-fill: #81d3f3;
+	-fx-background-color: #5f5c5c;
 }
 
 .yellowButton {
@@ -41,7 +164,7 @@
 }
 
 .yellowButton:hover {
-	-fx-text-fill: #ffffca;
+	-fx-background-color: #5f5c5c;
 }
 
 .redButton {
@@ -51,14 +174,17 @@
 .greenButton {
 	-fx-text-fill: #00df00;
 }
+
 .greenButton:hover {
-	-fx-text-fill: #77ff77;
+	-fx-background-color: #5f5c5c;
 }
+
 .greyButton {
 	-fx-text-fill: #aaaaaa;
 }
+
 .greyButton:hover {
-	-fx-text-fill: #ffffff;
+	-fx-background-color: #5f5c5c;
 }
 
 .darkButton {
