@@ -9,6 +9,7 @@ import javafx.beans.property.SimpleLongProperty;
 
 public class ObservableActionItemBean {
 
+	private SimpleLongProperty index;
 	@JsonDeserialize(using = LongDeserializer.class)
 	@JsonSerialize(using = LongSerializer.class)
 	private SimpleLongProperty delay;
@@ -23,11 +24,16 @@ public class ObservableActionItemBean {
 	private SimpleLongProperty releaseIncrement;
 
 	public ObservableActionItemBean() {
-		this(0L, 0L, 0L, 0L);
+		this(0L, 0L, 0L, 0L, 0L);
 	}
 
-	public ObservableActionItemBean(final Long delay, final Long release, final Long delayIncrement,
+	public ObservableActionItemBean(long index) {
+		this(index, 0L, 0L, 0L, 0L);
+	}
+
+	public ObservableActionItemBean(final Long index, final Long delay, final Long release, final Long delayIncrement,
 			final Long releaseIncrement) {
+		this.index = new SimpleLongProperty(index);
 		this.delay = new SimpleLongProperty(delay);
 		this.release = new SimpleLongProperty(release);
 		this.delayIncrement = new SimpleLongProperty(delayIncrement);
@@ -35,6 +41,14 @@ public class ObservableActionItemBean {
 
 	}
 
+	public Long getIndex() {
+		return index.get();
+	}
+
+	public void setIndex(final Long index) {
+		this.index.set(index);
+	}
+	
 	public Long getDelay() {
 		return delay.get();
 	}

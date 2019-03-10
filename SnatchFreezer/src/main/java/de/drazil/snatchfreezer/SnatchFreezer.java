@@ -1,5 +1,11 @@
 package de.drazil.snatchfreezer;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import de.drazil.snatchfreezer.model.ObservableActionItemBean;
 import de.drazil.util.EditCell;
 import de.drazil.util.Long2StringConverter;
@@ -11,13 +17,11 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SplitPane;
@@ -38,12 +42,16 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 public class SnatchFreezer extends Application {
 
 	private GridPane valveBox = null;
 	private GridPane actionBox = null;
+	private List<ObservableList<ObservableActionItemBean>> mainList;
+
+	private File file = null;
 
 	/*
 	 * @Override public void start(Stage stage) throws Exception {
@@ -70,12 +78,22 @@ public class SnatchFreezer extends Application {
 	public void start(Stage primaryStage) throws Exception {
 		Font font = Font.loadFont(getClass().getResource("fa-solid-900.ttf").toExternalForm(), 10);
 
+		mainList = new ArrayList<ObservableList<ObservableActionItemBean>>();
+
 		Menu applicationMenu = new Menu("Application");
 		MenuItem newProject = new MenuItem("New");
 		MenuItem loadProject = new MenuItem("Load");
 		MenuItem saveProject = new MenuItem("Save");
+		saveProject.setOnAction(value -> {
+			if (file == null) {
+				FileChooser fc = new FileChooser();
+				file = fc.showSaveDialog(null);
+			}
+			saveSettings(file);
+		});
+		MenuItem saveAsProject = new MenuItem("Save As ...");
 		MenuItem quitApplciation = new MenuItem("Quit");
-		applicationMenu.getItems().addAll(newProject, loadProject, saveProject, new SeparatorMenuItem(),
+		applicationMenu.getItems().addAll(newProject, loadProject, saveProject, saveAsProject, new SeparatorMenuItem(),
 				quitApplciation);
 		Menu helpMenu = new Menu("Help");
 		MenuItem help = new MenuItem("Help");
@@ -157,11 +175,11 @@ public class SnatchFreezer extends Application {
 		ScrollPane valveScrollPane = new ScrollPane(valveBox);
 		ScrollPane actionScrollPane = new ScrollPane(actionBox);
 
-		SplitPane controlSplitPane = new SplitPane();
-		controlSplitPane.setOrientation(Orientation.HORIZONTAL);
-		controlSplitPane.setDividerPositions(0.5f, 0.5f);
+		HBox controlSplitPane = new HBox();
+		//controlSplitPane.setOrientation(Orientation.HORIZONTAL);
+		//controlSplitPane.setDividerPositions(0.5f, 0.5f);
 
-		controlSplitPane.getItems().addAll(valveScrollPane, actionScrollPane);
+		controlSplitPane.getChildren().addAll(valveScrollPane, actionScrollPane);
 
 		VBox actionSplitPane = new VBox();
 		actionSplitPane.getChildren().addAll(controlSplitPane);
@@ -212,35 +230,59 @@ public class SnatchFreezer extends Application {
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 		spacer.setMinWidth(Region.USE_PREF_SIZE);
 
-		int tableWidth=70;
+		int tableWidth = 60;
 		TableView<ObservableActionItemBean> table = new TableView<>(createRowSet(rowCount));
+		
+		TableColumn<ObservableActionItemBean, Long> indexColumn = new TableColumn<>("#");
+		indexColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("index"));
+		indexColumn.setMinWidth(30);
+		indexColumn.setMaxWidth(30);
+		indexColumn.setPrefWidth(30);
+		indexColumn.setSortable(false);
+		indexColumn.setResizable(false);
+		indexColumn.setEditable(false);
+		
 
 		TableColumn<ObservableActionItemBean, Long> delayColumn = new TableColumn<>("Delay");
 		delayColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("delay"));
 		delayColumn.setMinWidth(tableWidth);
 		delayColumn.setMaxWidth(tableWidth);
 		delayColumn.setPrefWidth(tableWidth);
+		delayColumn.setSortable(false);
+		delayColumn.setResizable(false);
+
 		TableColumn<ObservableActionItemBean, Long> releaseColumn = new TableColumn<>("Release");
 		releaseColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("release"));
 		releaseColumn.setMinWidth(tableWidth);
 		releaseColumn.setMaxWidth(tableWidth);
 		releaseColumn.setPrefWidth(tableWidth);
-		TableColumn<ObservableActionItemBean, Long> delayIncrementColumn = new TableColumn<>("DelayInc");
+		releaseColumn.setSortable(false);
+		releaseColumn.setResizable(false);
+
+		TableColumn<ObservableActionItemBean, Long> delayIncrementColumn = new TableColumn<>("Add");
 		delayIncrementColumn
 				.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("delayIncrement"));
 		delayIncrementColumn.setMinWidth(tableWidth);
 		delayIncrementColumn.setMaxWidth(tableWidth);
 		delayIncrementColumn.setPrefWidth(tableWidth);
-		TableColumn<ObservableActionItemBean, Long> releaseIncrementColumn = new TableColumn<>("ReleaseInc");
+		delayIncrementColumn.setSortable(false);
+		delayIncrementColumn.setResizable(false);
+
+		TableColumn<ObservableActionItemBean, Long> releaseIncrementColumn = new TableColumn<>("Add");
 		releaseIncrementColumn
 				.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("releaseIncrement"));
 		releaseIncrementColumn.setMinWidth(tableWidth);
 		releaseIncrementColumn.setMaxWidth(tableWidth);
 		releaseIncrementColumn.setPrefWidth(tableWidth);
-		table.getColumns().addAll(delayColumn, releaseColumn, delayIncrementColumn, releaseIncrementColumn);
+		releaseIncrementColumn.setSortable(false);
+		releaseIncrementColumn.setResizable(false);
+
+		table.getColumns().addAll(indexColumn, delayColumn, delayIncrementColumn, releaseColumn,
+				releaseIncrementColumn);
 		table.setPrefHeight(27 + rowCount * 27);
 		table.setPrefWidth(285);
 		table.setEditable(true);
+
 		table.getSelectionModel().cellSelectionEnabledProperty().set(true);
 		table.setOnKeyPressed(event -> {
 			if (event.getCode().isLetterKey() || event.getCode().isDigitKey()) {
@@ -254,6 +296,7 @@ public class SnatchFreezer extends Application {
 			}
 		});
 
+		setIndexColumnFactory(table, indexColumn);
 		setDelayColumnFactory(table, delayColumn);
 		setReleaseColumnFactory(table, releaseColumn);
 		setDelayIncrementColumnFactory(table, delayIncrementColumn);
@@ -298,14 +341,10 @@ public class SnatchFreezer extends Application {
 	@SuppressWarnings("unchecked")
 	private void selectPrevious(TableView<ObservableActionItemBean> table) {
 		if (table.getSelectionModel().isCellSelectionEnabled()) {
-			// in cell selection mode, we have to wrap around, going from
-			// right-to-left, and then wrapping to the end of the previous line
 			TablePosition<ObservableActionItemBean, ?> pos = table.getFocusModel().getFocusedCell();
 			if (pos.getColumn() - 1 >= 0) {
-				// go to previous row
 				table.getSelectionModel().select(pos.getRow(), getTableColumn(table, pos.getTableColumn(), -1));
 			} else if (pos.getRow() < table.getItems().size()) {
-				// wrap to end of previous row
 				table.getSelectionModel().select(pos.getRow() - 1,
 						table.getVisibleLeafColumn(table.getVisibleLeafColumns().size() - 1));
 			}
@@ -326,6 +365,17 @@ public class SnatchFreezer extends Application {
 		return table.getVisibleLeafColumn(newColumnIndex);
 	}
 
+	private void setIndexColumnFactory(final TableView<ObservableActionItemBean> table,
+			final TableColumn<ObservableActionItemBean, Long> column) {
+		column.setCellFactory(EditCell.<ObservableActionItemBean, Long>forTableColumn(new Long2StringConverter()));
+		column.setOnEditCommit(event -> {
+			final Long value = event.getNewValue() != null ? event.getNewValue() : event.getOldValue();
+			((ObservableActionItemBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
+					.setIndex(value);
+			table.refresh();
+		});
+	}
+	
 	private void setDelayColumnFactory(final TableView<ObservableActionItemBean> table,
 			final TableColumn<ObservableActionItemBean, Long> column) {
 		column.setCellFactory(EditCell.<ObservableActionItemBean, Long>forTableColumn(new Long2StringConverter()));
@@ -373,9 +423,22 @@ public class SnatchFreezer extends Application {
 	private ObservableList<ObservableActionItemBean> createRowSet(int count) {
 		ObservableList<ObservableActionItemBean> list = FXCollections.observableArrayList();
 		for (int i = 0; i < count; i++) {
-			list.add(new ObservableActionItemBean());
+			list.add(new ObservableActionItemBean(new Long(i + 1), 10000000L, 1000000L, 100L, 20L));
 		}
+		mainList.add(list);
 		return list;
+	}
+
+	private void saveSettings(File file) {
+
+		if (file != null) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				mapper.writeValue(file, mainList);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 }
