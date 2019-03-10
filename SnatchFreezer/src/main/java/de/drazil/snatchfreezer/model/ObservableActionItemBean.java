@@ -1,27 +1,37 @@
 package de.drazil.snatchfreezer.model;
 
-import javafx.beans.property.SimpleBooleanProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.deser.std.NumberDeserializers.LongDeserializer;
+import com.fasterxml.jackson.databind.ser.std.NumberSerializers.LongSerializer;
+
 import javafx.beans.property.SimpleLongProperty;
 
 public class ObservableActionItemBean {
 
+	@JsonDeserialize(using = LongDeserializer.class)
+	@JsonSerialize(using = LongSerializer.class)
 	private SimpleLongProperty delay;
+	@JsonDeserialize(using = LongDeserializer.class)
+	@JsonSerialize(using = LongSerializer.class)
 	private SimpleLongProperty release;
+	@JsonDeserialize(using = LongDeserializer.class)
+	@JsonSerialize(using = LongSerializer.class)
 	private SimpleLongProperty delayIncrement;
+	@JsonDeserialize(using = LongDeserializer.class)
+	@JsonSerialize(using = LongSerializer.class)
 	private SimpleLongProperty releaseIncrement;
-	private SimpleBooleanProperty ignore;
 
 	public ObservableActionItemBean() {
-		this(new Long(0), new Long(0), new Long(0), new Long(0), false);
+		this(0L, 0L, 0L, 0L);
 	}
 
-	public ObservableActionItemBean(final long delay, final long release, final long delayIncrement,
-			final long releaseIncrement, final boolean ignore) {
+	public ObservableActionItemBean(final Long delay, final Long release, final Long delayIncrement,
+			final Long releaseIncrement) {
 		this.delay = new SimpleLongProperty(delay);
 		this.release = new SimpleLongProperty(release);
 		this.delayIncrement = new SimpleLongProperty(delayIncrement);
 		this.releaseIncrement = new SimpleLongProperty(releaseIncrement);
-		this.ignore = new SimpleBooleanProperty(ignore);
 
 	}
 
@@ -57,11 +67,4 @@ public class ObservableActionItemBean {
 		this.releaseIncrement.set(releaseIncrement);
 	}
 
-	public Boolean getIgnore() {
-		return ignore.get();
-	}
-
-	public void setIgnore(final Boolean ignore) {
-		this.ignore.set(ignore);
-	}
 }
