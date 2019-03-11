@@ -1,4 +1,4 @@
-#pane, .root, .split-pane .grid-pane .scroll-pane{
+#pane, .root, .split-pane {
 	-fx-background-color: #353434;
 	-fx-foreground-color: #353434;
 	-fx-accent: #d0d0d0;

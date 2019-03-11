@@ -11,6 +11,7 @@ import de.drazil.util.EditCell;
 import de.drazil.util.Long2StringConverter;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
@@ -172,17 +173,27 @@ public class SnatchFreezer extends Application {
 		actionButtonPane.getChildren().add(new Spinner<Integer>());
 		actionButtonPane.getChildren().add(go);
 
-		ScrollPane valveScrollPane = new ScrollPane(valveBox);
-		ScrollPane actionScrollPane = new ScrollPane(actionBox);
+		//ScrollPane valveScrollPane = new ScrollPane(valveBox);
+		//ScrollPane actionScrollPane = new ScrollPane(actionBox);
 
+		GridPane formPane = new GridPane();
+		formPane.add(new Label("Serial Port"), 0, 0);
+		formPane.add(new TextField(), 1, 0);
+		formPane.add(new Label("Cycles"), 0, 1);
+		formPane.add(new TextField(), 1, 1);
+		formPane.add(new Label("Cycledelay"), 0, 2);
+		formPane.add(new Spinner<Long>(), 1, 2);
+		
+		VBox rightPane = new VBox();
+		rightPane.getChildren().addAll(actionBox,formPane);
+		
+		
 		HBox controlSplitPane = new HBox();
-		//controlSplitPane.setOrientation(Orientation.HORIZONTAL);
-		//controlSplitPane.setDividerPositions(0.5f, 0.5f);
+		controlSplitPane.getChildren().addAll(valveBox, rightPane);
 
-		controlSplitPane.getChildren().addAll(valveScrollPane, actionScrollPane);
+		
 
-		VBox actionSplitPane = new VBox();
-		actionSplitPane.getChildren().addAll(controlSplitPane);
+		
 
 		TextArea console = new TextArea();
 		TextArea description = new TextArea();
@@ -194,13 +205,13 @@ public class SnatchFreezer extends Application {
 		SplitPane tabSplitPane = new SplitPane();
 		tabSplitPane.setDividerPositions(0.8f, 0.2f);
 		tabSplitPane.setOrientation(Orientation.VERTICAL);
-		tabSplitPane.getItems().addAll(actionSplitPane, tabPane);
+		tabSplitPane.getItems().addAll(controlSplitPane, tabPane);
 
 		VBox root = new VBox();
 		root.getChildren().addAll(menubar, tabSplitPane);
 
 		tabSplitPane.prefHeightProperty().bind(root.heightProperty());
-		actionScrollPane.prefHeightProperty().bind(root.heightProperty());
+		//actionScrollPane.prefHeightProperty().bind(root.heightProperty());
 
 		Scene scene = new Scene(root, 1024, 768);
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
@@ -232,7 +243,7 @@ public class SnatchFreezer extends Application {
 
 		int tableWidth = 60;
 		TableView<ObservableActionItemBean> table = new TableView<>(createRowSet(rowCount));
-		
+
 		TableColumn<ObservableActionItemBean, Long> indexColumn = new TableColumn<>("#");
 		indexColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("index"));
 		indexColumn.setMinWidth(30);
@@ -241,7 +252,6 @@ public class SnatchFreezer extends Application {
 		indexColumn.setSortable(false);
 		indexColumn.setResizable(false);
 		indexColumn.setEditable(false);
-		
 
 		TableColumn<ObservableActionItemBean, Long> delayColumn = new TableColumn<>("Delay");
 		delayColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("delay"));
@@ -375,7 +385,7 @@ public class SnatchFreezer extends Application {
 			table.refresh();
 		});
 	}
-	
+
 	private void setDelayColumnFactory(final TableView<ObservableActionItemBean> table,
 			final TableColumn<ObservableActionItemBean, Long> column) {
 		column.setCellFactory(EditCell.<ObservableActionItemBean, Long>forTableColumn(new Long2StringConverter()));
@@ -440,5 +450,4 @@ public class SnatchFreezer extends Application {
 			}
 		}
 	}
-
 }
