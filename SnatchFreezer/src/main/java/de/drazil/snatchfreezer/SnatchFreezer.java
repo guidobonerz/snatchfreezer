@@ -15,11 +15,12 @@ import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Spinner;
@@ -31,8 +32,8 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
-import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
@@ -104,13 +105,13 @@ public class SnatchFreezer extends Application {
 		menubar.getMenus().add(applicationMenu);
 		menubar.getMenus().add(helpMenu);
 		valveBox = new GridPane();
-		TitledPane valvePane = new TitledPane("Valve Control", valveBox);
+		TitledPane valvePane = new TitledPane("Valve Devices", valveBox);
 		valvePane.setCollapsible(false);
 		valvePane.getStyleClass().add("titledValvePane");
 		createTableSet(valveBox, 6, 5);
 
 		actionBox = new GridPane();
-		TitledPane actionPane = new TitledPane("Camera/Flash Control", actionBox);
+		TitledPane actionPane = new TitledPane("Camera/Flash Devices", actionBox);
 		actionPane.getStyleClass().add("titledActionPane");
 		actionPane.setCollapsible(false);
 		createTableSet(actionBox, 4, 1);
@@ -121,99 +122,57 @@ public class SnatchFreezer extends Application {
 		actionButtonPane.setMaxHeight(60);
 
 		Button camera = new Button("\uf083");
-		camera.setTooltip(new Tooltip("Add one maximum two camera triggers to list"));
 		camera.getStyleClass().add("orangeButton");
 		camera.getStyleClass().add("bigButtonIcon");
 		camera.setMinWidth(70);
 		camera.setMaxWidth(70);
 		camera.setPrefWidth(70);
-		Button bulb = new Button("\uf0e7");
-		bulb.getStyleClass().add("yellowButton");
-		bulb.getStyleClass().add("bigButtonIcon");
-		bulb.setTooltip(new Tooltip("Add one maximum two flash triggers to list"));
-		bulb.setMinWidth(70);
-		bulb.setMaxWidth(70);
-		bulb.setPrefWidth(70);
-		Button tint = new Button("\uf043");
-		tint.getStyleClass().add("blueButton");
-		tint.getStyleClass().add("bigButtonIcon");
-		tint.setTooltip(new Tooltip("Add one maximum six valve triggers to list"));
-		tint.setMinWidth(70);
-		tint.setMaxWidth(70);
-		tint.setPrefWidth(70);
-		Button go = new Button("\uf70c");
-		go.getStyleClass().add("greenButton");
-		go.getStyleClass().add("bigButtonIcon");
-		go.setTooltip(new Tooltip("Start shooting \uf4da"));
-		go.setMinWidth(70);
-		go.setMaxWidth(70);
-		go.setPrefWidth(70);
 
-		Button empty = new Button("\uf576");
-		empty.getStyleClass().add("blueButton");
-		empty.getStyleClass().add("bigButtonIcon");
-		empty.setTooltip(new Tooltip("Empty siphon"));
-		empty.setMinWidth(70);
-		empty.setMaxWidth(70);
-		empty.setPrefWidth(70);
-
-		camera.prefHeightProperty().bind(actionButtonPane.heightProperty());
-		bulb.prefHeightProperty().bind(actionButtonPane.heightProperty());
-		tint.prefHeightProperty().bind(actionButtonPane.heightProperty());
-		empty.prefHeightProperty().bind(actionButtonPane.heightProperty());
-		go.prefHeightProperty().bind(actionButtonPane.heightProperty());
+		ProgressIndicator transferIndicator = new ProgressIndicator();
+		ProgressIndicator progressIndicator = new ProgressIndicator();
 
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 		spacer.setMinHeight(Region.USE_PREF_SIZE);
 
-		actionButtonPane.getChildren().add(camera);
-		actionButtonPane.getChildren().add(bulb);
-		actionButtonPane.getChildren().add(tint);
-
-		actionButtonPane.getChildren().add(spacer);
-
-		actionButtonPane.getChildren().add(empty);
-		actionButtonPane.getChildren().add(new Spinner<Integer>());
-		actionButtonPane.getChildren().add(go);
-
 		TextArea console = new TextArea();
 		TextArea description = new TextArea();
 
-		
-		
 		GridPane formPane = new GridPane();
 		TitledPane controlPane = new TitledPane("Control", formPane);
 		controlPane.getStyleClass().add("titledControlPane");
 		controlPane.setCollapsible(false);
 
 		TabPane tabPane = new TabPane();
+		tabPane.setManaged(true);
 		tabPane.getTabs().add(new Tab("Console", console));
 		tabPane.getTabs().add(new Tab("Description", description));
-		
-		
+
 		formPane.add(new Label("Serial Port"), 0, 0);
-		formPane.add(new TextField(), 1, 0);
+		formPane.add(new ComboBox<String>(), 1, 0);
 		formPane.add(new Label("Cycles"), 0, 1);
 		formPane.add(new Spinner<Long>(), 1, 1);
 		formPane.add(new Label("CycleDelay"), 0, 2);
 		formPane.add(new TextField(), 1, 2);
-		formPane.add(tabPane, 0, 3, 3, 2);
+		formPane.add(camera, 2, 0, 1, 3);
+		// formPane.add(progressIndicator, 4, 0, 1, 3);
 
 		VBox rightPane = new VBox();
-		rightPane.getChildren().addAll(actionPane, controlPane);
+		rightPane.getChildren().addAll(actionPane, controlPane, tabPane);
 
 		HBox controlSplitPane = new HBox();
 		controlSplitPane.getChildren().addAll(valvePane, rightPane);
 
-		//tabPane.prefHeightProperty().bind(controlPane.heightProperty());
-		tabPane.prefWidthProperty().bind(controlPane.widthProperty());
-		
-		
+		// tabPane.prefWidthProperty().bind(formPane.widthProperty());
+		// consoleScrollPane.prefWidthProperty().bind(rightPane.widthProperty());
+		// consoleScrollPane.prefHeightProperty().bind(rightPane.heightProperty());
+
 		VBox root = new VBox();
 		root.getChildren().addAll(menubar, controlSplitPane);
+		controlSplitPane.prefWidthProperty().bind(root.widthProperty());
+		controlSplitPane.maxWidthProperty().bind(root.widthProperty());
 
-		Scene scene = new Scene(root, 1024, 768);
+		Scene scene = new Scene(root, 1280, 768);
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 		primaryStage.setTitle("Snatchfreezer");
 		// primaryStage.setMaximized(true);
@@ -318,27 +277,28 @@ public class SnatchFreezer extends Application {
 		Label idLabel = new Label(Integer.toString(id));
 		idLabel.getStyleClass().add("fatLabel");
 
-		Button addButton = new Button("\uf055");
-		addButton.getStyleClass().add("darkButton");
+		ToggleButton activeButton = new ToggleButton("\uf205");
+		activeButton.getStyleClass().add("toggleOn");
 
-		Button removeButton = new Button("\uf056");
-		removeButton.getStyleClass().add("darkButton");
+		TextField desciption = new TextField();
+
 		toolbar.getItems().add(idLabel);
-		// toolbar.getItems().add(addButton);
-		// toolbar.getItems().add(removeButton);
-		toolbar.getItems().add(new TextField());
-		// toolbar.getItems().add(new ComboBox<String>());
-		CheckBox activeButton = new CheckBox("Active");
+		toolbar.getItems().add(activeButton);
+		toolbar.getItems().add(desciption);
+
 		activeButton.setSelected(true);
 		activeButton.setOnAction(value -> {
 			table.setDisable(!activeButton.isSelected());
+			idLabel.setDisable(!activeButton.isSelected());
+			desciption.setDisable(!activeButton.isSelected());
+			activeButton.getStyleClass().remove("toggleOn");
+			activeButton.getStyleClass().remove("toggleOff");
+			activeButton.getStyleClass().add(activeButton.isSelected() ? "toggleOn" : "toggleOff");
+			activeButton.setText(activeButton.isSelected() ? "\uf205" : "\uf204");
 		});
-		toolbar.getItems().add(activeButton);
-		toolbar.getItems().add(spacer);
-		Button closeButton = new Button("\uf410");
-		closeButton.getStyleClass().add("darkButton");
 
-		// toolbar.getItems().add(closeButton);
+		// toolbar.getItems().add(spacer);
+
 		vbox.getChildren().add(toolbar);
 
 		vbox.getChildren().add(table);
