@@ -280,28 +280,32 @@ public class SnatchFreezer extends Application {
 		ToggleButton activeButton = new ToggleButton("\uf205");
 		activeButton.getStyleClass().add("toggleOn");
 
-		TextField desciption = new TextField();
+		TextField description = new TextField();
 
-		toolbar.getItems().add(idLabel);
-		toolbar.getItems().add(activeButton);
-		toolbar.getItems().add(desciption);
-
+		Button menu = new Button("\uf142");
+		
 		activeButton.setSelected(true);
 		activeButton.setOnAction(value -> {
 			table.setDisable(!activeButton.isSelected());
 			idLabel.setDisable(!activeButton.isSelected());
-			desciption.setDisable(!activeButton.isSelected());
+			description.setDisable(!activeButton.isSelected());
+			menu.setDisable(!activeButton.isSelected());
 			activeButton.getStyleClass().remove("toggleOn");
 			activeButton.getStyleClass().remove("toggleOff");
 			activeButton.getStyleClass().add(activeButton.isSelected() ? "toggleOn" : "toggleOff");
 			activeButton.setText(activeButton.isSelected() ? "\uf205" : "\uf204");
 		});
 
-		// toolbar.getItems().add(spacer);
+		
 
-		vbox.getChildren().add(toolbar);
+		toolbar.getItems().add(idLabel);
+		toolbar.getItems().add(activeButton);
+		toolbar.getItems().add(description);
+		toolbar.getItems().add(spacer);
+		toolbar.getItems().add(menu);
 
-		vbox.getChildren().add(table);
+		vbox.getChildren().addAll(toolbar, table);
+
 		return vbox;
 	}
 

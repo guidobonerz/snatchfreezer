@@ -170,7 +170,8 @@
 	-fx-background-color: -fx-background;
 }
 
-.titled-pane>*.content>* {
+.titled-pane>.content {
+	-fx-background-color: -fx-background;
 	-fx-border-color: transparent;
 	-fx-border-width: 0;
 	-fx-padding: 0;
@@ -201,7 +202,7 @@
 }
 
 .titledControlPane>.title {
-	-fx-background-color: #747036;
+	-fx-background-color: #5a4a8a;
 	-fx-font-size: 20px;
 	-fx-background-radius: 0;
 }
