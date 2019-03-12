@@ -11,9 +11,7 @@ import de.drazil.util.EditCell;
 import de.drazil.util.Long2StringConverter;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -25,7 +23,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Spinner;
-import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
@@ -33,6 +30,7 @@ import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -106,9 +104,15 @@ public class SnatchFreezer extends Application {
 		menubar.getMenus().add(applicationMenu);
 		menubar.getMenus().add(helpMenu);
 		valveBox = new GridPane();
+		TitledPane valvePane = new TitledPane("Valve Control", valveBox);
+		valvePane.setCollapsible(false);
+		valvePane.getStyleClass().add("titledValvePane");
 		createTableSet(valveBox, 6, 5);
 
 		actionBox = new GridPane();
+		TitledPane actionPane = new TitledPane("Camera/Flash Control", actionBox);
+		actionPane.getStyleClass().add("titledActionPane");
+		actionPane.setCollapsible(false);
 		createTableSet(actionBox, 4, 1);
 
 		HBox actionButtonPane = new HBox();
@@ -173,45 +177,41 @@ public class SnatchFreezer extends Application {
 		actionButtonPane.getChildren().add(new Spinner<Integer>());
 		actionButtonPane.getChildren().add(go);
 
-		//ScrollPane valveScrollPane = new ScrollPane(valveBox);
-		//ScrollPane actionScrollPane = new ScrollPane(actionBox);
-
-		GridPane formPane = new GridPane();
-		formPane.add(new Label("Serial Port"), 0, 0);
-		formPane.add(new TextField(), 1, 0);
-		formPane.add(new Label("Cycles"), 0, 1);
-		formPane.add(new TextField(), 1, 1);
-		formPane.add(new Label("Cycledelay"), 0, 2);
-		formPane.add(new Spinner<Long>(), 1, 2);
-		
-		VBox rightPane = new VBox();
-		rightPane.getChildren().addAll(actionBox,formPane);
-		
-		
-		HBox controlSplitPane = new HBox();
-		controlSplitPane.getChildren().addAll(valveBox, rightPane);
-
-		
-
-		
-
 		TextArea console = new TextArea();
 		TextArea description = new TextArea();
+
+		
+		
+		GridPane formPane = new GridPane();
+		TitledPane controlPane = new TitledPane("Control", formPane);
+		controlPane.getStyleClass().add("titledControlPane");
+		controlPane.setCollapsible(false);
 
 		TabPane tabPane = new TabPane();
 		tabPane.getTabs().add(new Tab("Console", console));
 		tabPane.getTabs().add(new Tab("Description", description));
+		
+		
+		formPane.add(new Label("Serial Port"), 0, 0);
+		formPane.add(new TextField(), 1, 0);
+		formPane.add(new Label("Cycles"), 0, 1);
+		formPane.add(new Spinner<Long>(), 1, 1);
+		formPane.add(new Label("CycleDelay"), 0, 2);
+		formPane.add(new TextField(), 1, 2);
+		formPane.add(tabPane, 0, 3, 3, 2);
 
-		SplitPane tabSplitPane = new SplitPane();
-		tabSplitPane.setDividerPositions(0.8f, 0.2f);
-		tabSplitPane.setOrientation(Orientation.VERTICAL);
-		tabSplitPane.getItems().addAll(controlSplitPane, tabPane);
+		VBox rightPane = new VBox();
+		rightPane.getChildren().addAll(actionPane, controlPane);
 
+		HBox controlSplitPane = new HBox();
+		controlSplitPane.getChildren().addAll(valvePane, rightPane);
+
+		//tabPane.prefHeightProperty().bind(controlPane.heightProperty());
+		tabPane.prefWidthProperty().bind(controlPane.widthProperty());
+		
+		
 		VBox root = new VBox();
-		root.getChildren().addAll(menubar, tabSplitPane);
-
-		tabSplitPane.prefHeightProperty().bind(root.heightProperty());
-		//actionScrollPane.prefHeightProperty().bind(root.heightProperty());
+		root.getChildren().addAll(menubar, controlSplitPane);
 
 		Scene scene = new Scene(root, 1024, 768);
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
@@ -228,7 +228,10 @@ public class SnatchFreezer extends Application {
 				x = 0;
 				y++;
 			}
-			grid.add(createTable(i + 1, rowCount), x, y);
+			ScrollPane sp = new ScrollPane(createTable(i + 1, rowCount));
+			sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+			sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+			grid.add(sp, x, y);
 			x++;
 		}
 	}
@@ -269,7 +272,7 @@ public class SnatchFreezer extends Application {
 		releaseColumn.setSortable(false);
 		releaseColumn.setResizable(false);
 
-		TableColumn<ObservableActionItemBean, Long> delayIncrementColumn = new TableColumn<>("Add");
+		TableColumn<ObservableActionItemBean, Long> delayIncrementColumn = new TableColumn<>("Cycle+");
 		delayIncrementColumn
 				.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("delayIncrement"));
 		delayIncrementColumn.setMinWidth(tableWidth);
@@ -278,7 +281,7 @@ public class SnatchFreezer extends Application {
 		delayIncrementColumn.setSortable(false);
 		delayIncrementColumn.setResizable(false);
 
-		TableColumn<ObservableActionItemBean, Long> releaseIncrementColumn = new TableColumn<>("Add");
+		TableColumn<ObservableActionItemBean, Long> releaseIncrementColumn = new TableColumn<>("Cycle+");
 		releaseIncrementColumn
 				.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("releaseIncrement"));
 		releaseIncrementColumn.setMinWidth(tableWidth);
@@ -289,7 +292,7 @@ public class SnatchFreezer extends Application {
 
 		table.getColumns().addAll(indexColumn, delayColumn, delayIncrementColumn, releaseColumn,
 				releaseIncrementColumn);
-		table.setPrefHeight(27 + rowCount * 27);
+		table.setPrefHeight(24 + rowCount * 25);
 		table.setPrefWidth(285);
 		table.setEditable(true);
 
@@ -313,6 +316,7 @@ public class SnatchFreezer extends Application {
 		setReleaseIncrementColumnFactory(table, releaseIncrementColumn);
 
 		Label idLabel = new Label(Integer.toString(id));
+		idLabel.getStyleClass().add("fatLabel");
 
 		Button addButton = new Button("\uf055");
 		addButton.getStyleClass().add("darkButton");
@@ -378,6 +382,7 @@ public class SnatchFreezer extends Application {
 	private void setIndexColumnFactory(final TableView<ObservableActionItemBean> table,
 			final TableColumn<ObservableActionItemBean, Long> column) {
 		column.setCellFactory(EditCell.<ObservableActionItemBean, Long>forTableColumn(new Long2StringConverter()));
+
 		column.setOnEditCommit(event -> {
 			final Long value = event.getNewValue() != null ? event.getNewValue() : event.getOldValue();
 			((ObservableActionItemBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
@@ -433,7 +438,7 @@ public class SnatchFreezer extends Application {
 	private ObservableList<ObservableActionItemBean> createRowSet(int count) {
 		ObservableList<ObservableActionItemBean> list = FXCollections.observableArrayList();
 		for (int i = 0; i < count; i++) {
-			list.add(new ObservableActionItemBean(new Long(i + 1), 10000000L, 1000000L, 100L, 20L));
+			list.add(new ObservableActionItemBean(new Long(i + 1), 0L, 0L, 0L, 0L));
 		}
 		mainList.add(list);
 		return list;
@@ -450,4 +455,5 @@ public class SnatchFreezer extends Application {
 			}
 		}
 	}
+
 }

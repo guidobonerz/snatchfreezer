@@ -27,7 +27,6 @@
 					<mainClass>de.drazil.snatchfreezer.SnatchFreezer</mainClass>
 				</configuration>
 			</plugin>
-
 		</plugins>
 	</build>
 	<dependencies>
