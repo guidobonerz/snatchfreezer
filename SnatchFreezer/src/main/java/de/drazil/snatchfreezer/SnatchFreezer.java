@@ -3,6 +3,8 @@ package de.drazil.snatchfreezer;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -52,7 +54,7 @@ public class SnatchFreezer extends Application {
 	private List<ObservableList<ObservableActionItemBean>> mainList;
 
 	private File file = null;
-
+	private ResourceBundle messages = null;
 	/*
 	 * @Override public void start(Stage stage) throws Exception {
 	 * setUserAgentStylesheet(STYLESHEET_MODENA);
@@ -70,20 +72,23 @@ public class SnatchFreezer extends Application {
 	 * 
 	 * @Override public void handle(WindowEvent event) { System.exit(0); } }); }
 	 */
+
 	public static void main(String[] args) {
 		launch(args);
 	}
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		messages = ResourceBundle.getBundle("de.drazil.snatchfreezer.i18n.message", Locale.ENGLISH);
+
 		Font font = Font.loadFont(getClass().getResource("fa-solid-900.ttf").toExternalForm(), 10);
 
 		mainList = new ArrayList<ObservableList<ObservableActionItemBean>>();
 
-		Menu applicationMenu = new Menu("Application");
-		MenuItem newProject = new MenuItem("New");
-		MenuItem loadProject = new MenuItem("Load");
-		MenuItem saveProject = new MenuItem("Save");
+		Menu applicationMenu = new Menu(messages.getString("menu.application"));
+		MenuItem newProject = new MenuItem(messages.getString("menu.application.new"));
+		MenuItem loadProject = new MenuItem(messages.getString("menu.application.load"));
+		MenuItem saveProject = new MenuItem(messages.getString("menu.application.save"));
 		saveProject.setOnAction(value -> {
 			if (file == null) {
 				FileChooser fc = new FileChooser();
@@ -91,27 +96,32 @@ public class SnatchFreezer extends Application {
 			}
 			saveSettings(file);
 		});
-		MenuItem saveAsProject = new MenuItem("Save As ...");
-		MenuItem quitApplciation = new MenuItem("Quit");
+		MenuItem saveAsProject = new MenuItem(messages.getString("menu.application.saveAs"));
+		saveAsProject.setOnAction(value -> {
+			FileChooser fc = new FileChooser();
+			file = fc.showSaveDialog(null);
+			saveSettings(file);
+		});
+		MenuItem quitApplciation = new MenuItem(messages.getString("menu.application.quit"));
 		applicationMenu.getItems().addAll(newProject, loadProject, saveProject, saveAsProject, new SeparatorMenuItem(),
 				quitApplciation);
-		Menu helpMenu = new Menu("Help");
-		MenuItem help = new MenuItem("Help");
-		MenuItem checkUpdates = new MenuItem("Check for Updates");
-		MenuItem about = new MenuItem("About");
+		Menu helpMenu = new Menu(messages.getString("menu.help"));
+		MenuItem help = new MenuItem(messages.getString("menu.help.help"));
+		MenuItem checkUpdates = new MenuItem(messages.getString("menu.help.updates"));
+		MenuItem about = new MenuItem(messages.getString("menu.help.about"));
 		helpMenu.getItems().addAll(help, checkUpdates, about);
 
 		MenuBar menubar = new MenuBar();
 		menubar.getMenus().add(applicationMenu);
 		menubar.getMenus().add(helpMenu);
 		valveBox = new GridPane();
-		TitledPane valvePane = new TitledPane("Valve Devices", valveBox);
+		TitledPane valvePane = new TitledPane(messages.getString("pane.devices"), valveBox);
 		valvePane.setCollapsible(false);
 		valvePane.getStyleClass().add("titledValvePane");
 		createTableSet(valveBox, 6, 5);
 
 		actionBox = new GridPane();
-		TitledPane actionPane = new TitledPane("Camera/Flash Devices", actionBox);
+		TitledPane actionPane = new TitledPane(messages.getString("pane.camera_flash"), actionBox);
 		actionPane.getStyleClass().add("titledActionPane");
 		actionPane.setCollapsible(false);
 		createTableSet(actionBox, 4, 1);
@@ -139,20 +149,20 @@ public class SnatchFreezer extends Application {
 		TextArea description = new TextArea();
 
 		GridPane formPane = new GridPane();
-		TitledPane controlPane = new TitledPane("Control", formPane);
+		TitledPane controlPane = new TitledPane(messages.getString("pane.control"), formPane);
 		controlPane.getStyleClass().add("titledControlPane");
 		controlPane.setCollapsible(false);
 
 		TabPane tabPane = new TabPane();
 		tabPane.setManaged(true);
-		tabPane.getTabs().add(new Tab("Console", console));
-		tabPane.getTabs().add(new Tab("Description", description));
+		tabPane.getTabs().add(new Tab(messages.getString("tab.console"), console));
+		tabPane.getTabs().add(new Tab(messages.getString("tab.description"), description));
 
-		formPane.add(new Label("Serial Port"), 0, 0);
+		formPane.add(new Label(messages.getString("label.serialPort")), 0, 0);
 		formPane.add(new ComboBox<String>(), 1, 0);
-		formPane.add(new Label("Cycles"), 0, 1);
+		formPane.add(new Label(messages.getString("label.cycles")), 0, 1);
 		formPane.add(new Spinner<Long>(), 1, 1);
-		formPane.add(new Label("CycleDelay"), 0, 2);
+		formPane.add(new Label(messages.getString("label.cycleDelay")), 0, 2);
 		formPane.add(new TextField(), 1, 2);
 		formPane.add(camera, 2, 0, 1, 3);
 		// formPane.add(progressIndicator, 4, 0, 1, 3);
@@ -215,7 +225,7 @@ public class SnatchFreezer extends Application {
 		indexColumn.setResizable(false);
 		indexColumn.setEditable(false);
 
-		TableColumn<ObservableActionItemBean, Long> delayColumn = new TableColumn<>("Delay");
+		TableColumn<ObservableActionItemBean, Long> delayColumn = new TableColumn<>(messages.getString("action.table.delay"));
 		delayColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("delay"));
 		delayColumn.setMinWidth(tableWidth);
 		delayColumn.setMaxWidth(tableWidth);
@@ -223,7 +233,7 @@ public class SnatchFreezer extends Application {
 		delayColumn.setSortable(false);
 		delayColumn.setResizable(false);
 
-		TableColumn<ObservableActionItemBean, Long> releaseColumn = new TableColumn<>("Release");
+		TableColumn<ObservableActionItemBean, Long> releaseColumn = new TableColumn<>(messages.getString("action.table.release"));
 		releaseColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("release"));
 		releaseColumn.setMinWidth(tableWidth);
 		releaseColumn.setMaxWidth(tableWidth);
@@ -231,7 +241,7 @@ public class SnatchFreezer extends Application {
 		releaseColumn.setSortable(false);
 		releaseColumn.setResizable(false);
 
-		TableColumn<ObservableActionItemBean, Long> delayIncrementColumn = new TableColumn<>("Cycle+");
+		TableColumn<ObservableActionItemBean, Long> delayIncrementColumn = new TableColumn<>(messages.getString("action.table.cycleAdd"));
 		delayIncrementColumn
 				.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("delayIncrement"));
 		delayIncrementColumn.setMinWidth(tableWidth);
@@ -240,7 +250,7 @@ public class SnatchFreezer extends Application {
 		delayIncrementColumn.setSortable(false);
 		delayIncrementColumn.setResizable(false);
 
-		TableColumn<ObservableActionItemBean, Long> releaseIncrementColumn = new TableColumn<>("Cycle+");
+		TableColumn<ObservableActionItemBean, Long> releaseIncrementColumn = new TableColumn<>(messages.getString("action.table.cycleAdd"));
 		releaseIncrementColumn
 				.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("releaseIncrement"));
 		releaseIncrementColumn.setMinWidth(tableWidth);
@@ -283,7 +293,7 @@ public class SnatchFreezer extends Application {
 		TextField description = new TextField();
 
 		Button menu = new Button("\uf142");
-		
+
 		activeButton.setSelected(true);
 		activeButton.setOnAction(value -> {
 			table.setDisable(!activeButton.isSelected());
@@ -295,8 +305,6 @@ public class SnatchFreezer extends Application {
 			activeButton.getStyleClass().add(activeButton.isSelected() ? "toggleOn" : "toggleOff");
 			activeButton.setText(activeButton.isSelected() ? "\uf205" : "\uf204");
 		});
-
-		
 
 		toolbar.getItems().add(idLabel);
 		toolbar.getItems().add(activeButton);

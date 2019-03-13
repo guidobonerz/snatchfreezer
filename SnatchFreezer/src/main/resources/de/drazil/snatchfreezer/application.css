@@ -214,7 +214,6 @@
 }
 
 .combo-box {
-	
 	-fx-background-color:#403f3e;
 	-fx-padding: 0;
 	-fx-insets: 0;
@@ -222,8 +221,6 @@
 	-fx-background-radius: 0;
 	-fx-border-style: none;
 	-fx-text-fill: white;
-	
-	-fx-background-color: transparent;
 }
 
 .button {
