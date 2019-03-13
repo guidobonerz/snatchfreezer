@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import javax.net.ssl.HostnameVerifier;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.drazil.snatchfreezer.model.ObservableActionItemBean;
@@ -40,6 +42,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -118,12 +121,13 @@ public class SnatchFreezer extends Application {
 		TitledPane valvePane = new TitledPane(messages.getString("pane.devices"), valveBox);
 		valvePane.setCollapsible(false);
 		valvePane.getStyleClass().add("titledValvePane");
+
 		createTableSet(valveBox, 6, 5);
 
 		actionBox = new GridPane();
-		TitledPane actionPane = new TitledPane(messages.getString("pane.camera_flash"), actionBox);
-		actionPane.getStyleClass().add("titledActionPane");
-		actionPane.setCollapsible(false);
+		TitledPane cameraFlashPane = new TitledPane(messages.getString("pane.camera_flash"), actionBox);
+		cameraFlashPane.getStyleClass().add("titledActionPane");
+		cameraFlashPane.setCollapsible(false);
 		createTableSet(actionBox, 4, 1);
 
 		HBox actionButtonPane = new HBox();
@@ -140,16 +144,14 @@ public class SnatchFreezer extends Application {
 
 		ProgressIndicator progressIndicator = new ProgressIndicator();
 		progressIndicator.setProgress(-1f);
-		
-		Region spacer = new Region();
-		HBox.setHgrow(spacer, Priority.ALWAYS);
-		spacer.setMinHeight(Region.USE_PREF_SIZE);
 
 		TextArea console = new TextArea();
 		TextArea description = new TextArea();
 
+		VBox control2 = new VBox();
 		GridPane formPane = new GridPane();
-		TitledPane controlPane = new TitledPane(messages.getString("pane.control"), formPane);
+		TitledPane controlPane = new TitledPane(messages.getString("pane.control"), control2);
+
 		controlPane.getStyleClass().add("titledControlPane");
 		controlPane.setCollapsible(false);
 
@@ -164,14 +166,22 @@ public class SnatchFreezer extends Application {
 		formPane.add(new Spinner<Long>(), 1, 1);
 		formPane.add(new Label(messages.getString("label.cycleDelay")), 0, 2);
 		formPane.add(new TextField(), 1, 2);
-		formPane.add(camera, 2, 0, 1, 3);
-		 formPane.add(progressIndicator, 4, 0, 1, 3);
 
-		VBox leftPane = new VBox();
-		leftPane.getChildren().addAll(actionPane, controlPane, tabPane);
+		HBox actionBar = new HBox();
+		actionBar.getChildren().addAll(camera, progressIndicator);
+		formPane.add(actionBar, 2, 0, 1, 3);
+
+		control2.getChildren().addAll(formPane, tabPane);
+		tabPane.setMinHeight(250);
+
+		VBox rightPane = new VBox();
+
+		rightPane.getChildren().addAll(cameraFlashPane, controlPane);
+
+		rightPane.prefHeightProperty().bind(valvePane.heightProperty());
 
 		HBox controlSplitPane = new HBox();
-		controlSplitPane.getChildren().addAll(valvePane, leftPane);
+		controlSplitPane.getChildren().addAll(valvePane, rightPane);
 
 		VBox root = new VBox();
 		root.getChildren().addAll(menubar, controlSplitPane);
@@ -201,11 +211,10 @@ public class SnatchFreezer extends Application {
 
 	@SuppressWarnings("unchecked")
 	private Node createTable(int id, int rowCount) {
-		VBox vbox = new VBox();
-		ToolBar toolbar = new ToolBar();
+
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
-		spacer.setMinWidth(Region.USE_PREF_SIZE);
+		spacer.setMinWidth(Region.USE_COMPUTED_SIZE);
 
 		int tableWidth = 60;
 		TableView<ObservableActionItemBean> table = new TableView<>(createRowSet(rowCount));
@@ -285,13 +294,11 @@ public class SnatchFreezer extends Application {
 		Label idLabel = new Label(Integer.toString(id));
 		idLabel.getStyleClass().add("fatLabel");
 
-		ToggleButton activeButton = new ToggleButton("\uf205");
-		activeButton.getStyleClass().add("toggleOn");
-
 		TextField description = new TextField();
-
 		Button menu = new Button("\uf142");
 
+		ToggleButton activeButton = new ToggleButton("\uf205");
+		activeButton.getStyleClass().add("toggleOn");
 		activeButton.setSelected(true);
 		activeButton.setOnAction(value -> {
 			table.setDisable(!activeButton.isSelected());
@@ -304,12 +311,14 @@ public class SnatchFreezer extends Application {
 			activeButton.setText(activeButton.isSelected() ? "\uf205" : "\uf204");
 		});
 
+		ToolBar toolbar = new ToolBar();
 		toolbar.getItems().add(idLabel);
 		toolbar.getItems().add(activeButton);
 		toolbar.getItems().add(description);
 		toolbar.getItems().add(spacer);
 		toolbar.getItems().add(menu);
 
+		VBox vbox = new VBox();
 		vbox.getChildren().addAll(toolbar, table);
 
 		return vbox;
