@@ -7,8 +7,7 @@ import lombok.Setter;
 
 @NoArgsConstructor
 @AllArgsConstructor
-public class ActionItemBean
-{
+public class ActionItemBean {
 	@Getter
 	@Setter
 	private long delay;
@@ -21,4 +20,7 @@ public class ActionItemBean
 	@Getter
 	@Setter
 	private long releaseIncrement;
+	@Getter
+	@Setter
+	private boolean ignore;
 }

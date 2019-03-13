@@ -1,30 +1,59 @@
 package de.drazil.snatchfreezer.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.deser.std.NumberDeserializers.LongDeserializer;
+import com.fasterxml.jackson.databind.ser.std.NumberSerializers.LongSerializer;
+
 import javafx.beans.property.SimpleLongProperty;
 
 public class ObservableActionItemBean {
 
+	private SimpleLongProperty index;
+	@JsonDeserialize(using = LongDeserializer.class)
+	@JsonSerialize(using = LongSerializer.class)
 	private SimpleLongProperty delay;
+	@JsonDeserialize(using = LongDeserializer.class)
+	@JsonSerialize(using = LongSerializer.class)
 	private SimpleLongProperty release;
+	@JsonDeserialize(using = LongDeserializer.class)
+	@JsonSerialize(using = LongSerializer.class)
 	private SimpleLongProperty delayIncrement;
+	@JsonDeserialize(using = LongDeserializer.class)
+	@JsonSerialize(using = LongSerializer.class)
 	private SimpleLongProperty releaseIncrement;
 
 	public ObservableActionItemBean() {
-		this(new Long(0), new Long(0), new Long(0), new Long(0));
+		this(0L, 0L, 0L, 0L, 0L);
 	}
 
-	public ObservableActionItemBean(long delay, long release, long delayIncrement, long releaseIncrement) {
+	public ObservableActionItemBean(long index) {
+		this(index, 0L, 0L, 0L, 0L);
+	}
+
+	public ObservableActionItemBean(final Long index, final Long delay, final Long release, final Long delayIncrement,
+			final Long releaseIncrement) {
+		this.index = new SimpleLongProperty(index);
 		this.delay = new SimpleLongProperty(delay);
 		this.release = new SimpleLongProperty(release);
 		this.delayIncrement = new SimpleLongProperty(delayIncrement);
 		this.releaseIncrement = new SimpleLongProperty(releaseIncrement);
+
 	}
 
+	public Long getIndex() {
+		return index.get();
+	}
+
+	public void setIndex(final Long index) {
+		this.index.set(index);
+	}
+	
 	public Long getDelay() {
 		return delay.get();
 	}
 
-	public void setDelay(Long delay) {
+	public void setDelay(final Long delay) {
 		this.delay.set(delay);
 	}
 
@@ -32,7 +61,7 @@ public class ObservableActionItemBean {
 		return release.get();
 	}
 
-	public void setRelease(Long release) {
+	public void setRelease(final Long release) {
 		this.release.set(release);
 	}
 
@@ -40,7 +69,7 @@ public class ObservableActionItemBean {
 		return delayIncrement.get();
 	}
 
-	public void setDelayIncrement(Long delayIncrement) {
+	public void setDelayIncrement(final Long delayIncrement) {
 		this.delayIncrement.set(delayIncrement);
 	}
 
@@ -48,7 +77,8 @@ public class ObservableActionItemBean {
 		return releaseIncrement.get();
 	}
 
-	public void setReleaseIncrement(Long releaseIncrement) {
+	public void setReleaseIncrement(final Long releaseIncrement) {
 		this.releaseIncrement.set(releaseIncrement);
 	}
+
 }

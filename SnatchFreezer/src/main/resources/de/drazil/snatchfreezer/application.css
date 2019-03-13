@@ -1,0 +1,308 @@
+#pane, .root, .split-pane {
+	-fx-base: #353434;
+	-fx-background: #4f4d4d;
+	-fx-foreground: #4f4d4d;
+	-fx-accent: #ff8040;
+}
+
+.label {
+	-fx-text-fill: white;
+	-fx-padding: 3px;
+}
+
+.label-bright {
+	-fx-font-size: 11pt;
+	-fx-font-family: "Segoe UI Semibold";
+	-fx-text-fill: white;
+	-fx-opacity: 1;
+}
+
+.label-header {
+	-fx-font-size: 32pt;
+	-fx-font-family: "Segoe UI Light";
+	-fx-text-fill: white;
+	-fx-opacity: 1;
+}
+
+.table-view {
+	-fx-control-inner-background: #353434;
+	-fx-background-color: -fx-background;
+	-fx-table-cell-border-color: transparent;
+	-fx-table-header-border-color: transparent;
+	-fx-padding: 0 3 0 0;
+	-fx-border-width: 0;
+}
+
+.table-view .table-column {
+	-fx-alignment: CENTER-RIGHT;
+}
+
+.table-view .column-header .label .table-row-cell {
+	-fx-font-size: 10pt;
+	-fx-font-family: "Segoe UI Semibold";
+	-fx-alignment: center-left;
+	-fx-opacity: 1;
+}
+
+.table-view:focused .table-row-cell:filled:focused:selected {
+	-fx-background-color: #d2d2d2;
+	-fx-border-width: 0;
+	-fx-padding: 0;
+	-fx-text-fill: white;
+}
+
+.text-field-table-cell .text-field {
+	-fx-padding: 0;
+	-fx-border-width: 0;
+	-fx-background-color: transparent;
+	-fx-border-radius: 0 0 0 0;
+	-fx-text-fill: white;
+	-fx-alignment: CENTER-RIGHT;
+}
+
+.table-row-cell:empty {
+	-fx-background-color: transparent;
+}
+
+.table-row-cell:odd:filled {
+	-fx-background-color: #494949;
+}
+
+.table-row-cell:even:filled {
+	-fx-background-color: #5f5f5f;
+}
+
+.table-cell:focused {
+	-fx-insets: 0 0 0 1;
+	-fx-background-color: transparent;
+	-fx-text-fill: white;
+}
+
+.scroll-pane {
+	-fx-border-color: white;
+	-fx-border-width: 0;
+	-fx-padding: 0;
+}
+
+.text-field {
+	-fx-background-color: #403f3e;
+	-fx-background-insets: 0;
+	-fx-background-radius: 0;
+	-fx-border-width: 2;
+	-fx-padding: 0;
+	-fx-text-fill: white; /*-fx-text-inner-color;*/
+	-fx-prompt-text-fill: #ffffff;
+	/*derive(-fx-control-inner-background, -30%);*/
+	-fx-cursor: text;
+	-fx-insets: 0;
+	-fx-border-width: 0 0 2 0;
+	-fx-border-color: #403f3e;
+	-fx-cursor: text;;
+}
+
+.text-field:focused {
+	-fx-background-color: #403f3e;
+	-fx-background-insets: 0;
+	-fx-background-radius: 0;
+	-fx-prompt-text-fill: transparent;
+	-fx-border-width: 0 0 2 0;
+	-fx-border-color: #ff8040;
+}
+
+.text-field:disabled {
+	-fx-opacity: -fx-disabled-opacity;
+	-fx-border-width: 2;
+	-fx-border-width: 0 0 2 0;
+}
+
+.text-input {
+	/*-fx-text-fill: -fx-text-inner-color;*/
+	-fx-highlight-fill: #ff8040;
+	/*derive(-fx-control-inner-background,-20%);*/
+	-fx-highlight-text-fill: #000000; /*-fx-text-inner-color;*/
+}
+
+.menu-bar {
+	-fx-padding: 0 0 0 0;
+	-fx-spacing: 0;
+	-fx-base: derive(#353434, -80%);
+	-fx-background-color: -fx-background;
+	-fx-background-insets: 0, 0 0 0 0;
+	-fx-background-radius: 0, 0;
+}
+
+/* Show nothing for background of normal menu button in a menu bar */
+.menu-bar>.container>.menu-button {
+	-fx-background-radius: 0;
+	-fx-background-color: transparent;
+	-fx-background-insets: 0;
+}
+/* Change padding of menu buttons when in menu bar */
+.menu-bar>.container>.menu-button>.label {
+	-fx-padding: 1 1 1 1 /* 4 6 4 6*/
+}
+
+.menu-bar>.container>.menu-button:hover, .menu-bar>.container>.menu-button:focused,
+	.menu-bar>.container>.menu-button:showing {
+	-fx-background: -fx-accent;
+	-fx-background-color: -fx-selection-bar;
+	-fx-text-fill: -fx-selection-bar-text;
+}
+
+/*.menu-bar .menu:focused:showing, .menu-bar .menu:showing, .menu-bar .menu:focused, .menu:focused:showing, .menu:showing, .menu:focused {*/
+/*.menu-bar .menu-button:showing, .menu-button:showing {
+    -fx-background: -fx-accent;
+    -fx-background-color: -fx-selection-bar;
+    -fx-text-fill: -fx-selection-bar-text;
+}*/
+.menu-bar>.container>.menu-button:hover {
+	-fx-background: -fx-accent;
+	-fx-background-color: -fx-selection-bar;
+	-fx-text-fill: -fx-selection-bar-text;
+}
+
+.menu-bar:show-mnemonics>.mnemonic-underline {
+	-fx-stroke: -fx-text-fill;
+}
+
+.tool-bar {
+	-fx-border-width: 0;
+	-fx-background-color: -fx-background;
+}
+
+.titled-pane>*.content {
+	-fx-background-color: -fx-background;
+	-fx-border-color: transparent;
+	-fx-border-width: 0;
+	-fx-background-insets:0;
+	-fx-padding: 0;
+	-fx-insets: 0;
+	-fx-border-radius: 0;
+}
+
+.tab-pane>.tab-header-area>.tab-header-background {
+	-fx-background-color: transparent;
+	-fx-effect: none;
+	-fx-border-width: 0;
+	-fx-border-insets: 0;
+	-fx-effect: none;
+}
+
+
+
+.titledValvePane>.title {
+	-fx-background-color: #375473;
+	-fx-font-size: 20px;
+	-fx-background-radius: 0;
+}
+
+.titledActionPane>.title {
+	-fx-background-color: #387261;
+	-fx-font-size: 20px;
+	-fx-background-radius: 0;
+}
+
+.titledControlPane>.title {
+	-fx-background-color: #5a4a8a;
+	-fx-font-size: 20px;
+	-fx-background-radius: 0;
+}
+
+.fatLabel {
+	-fx-font-weight: bold;
+	-fx-font-size: 20px;
+}
+
+.combo-box {
+	-fx-background-color:#403f3e;
+	-fx-padding: 0;
+	-fx-insets: 0;
+	-fx-border-width: 0;
+	-fx-background-radius: 0;
+	-fx-border-style: none;
+	-fx-text-fill: white;
+}
+
+.button {
+	-fx-font-family: "Font Awesome 5 Free Solid";
+	-fx-font-size: 20px;
+	-fx-padding: 2;
+	-fx-insets: 2;
+	-fx-border-width: 0;
+	-fx-background-radius: 0;
+	-fx-border-style: none;
+	-fx-text-fill: white;
+	
+	-fx-background-color: transparent;
+}
+
+.bigButtonIcon {
+	-fx-font-size: 60px;
+}
+
+.orangeButton {
+	-fx-text-fill: #ff8040;
+}
+
+.orangeButton:hover {
+	-fx-background-color: #5f5c5c;
+}
+
+.blueButton {
+	-fx-text-fill: #16afe9;
+}
+
+.blueButton:hover {
+	-fx-background-color: #5f5c5c;
+}
+
+.yellowButton {
+	-fx-text-fill: #ffff00;
+}
+
+.yellowButton:hover {
+	-fx-background-color: #5f5c5c;
+}
+
+.redButton {
+	-fx-text-fill: #ec0000;
+}
+
+.greenButton {
+	-fx-text-fill: #00df00;
+}
+
+.greenButton:hover {
+	-fx-background-color: #5f5c5c;
+}
+
+.greyButton {
+	-fx-text-fill: #aaaaaa;
+}
+
+.greyButton:hover {
+	-fx-background-color: #5f5c5c;
+}
+
+.darkButton {
+	-fx-text-fill: #353434;
+}
+
+.toggleOn {
+	-fx-font-family: "Font Awesome 5 Free Solid";
+	-fx-font-size: 20px;
+	-fx-text-fill: #16afe9;
+	-fx-background-color: -fx-background;
+	-fx-border-width: 0;
+	-fx-border-radius: 0;
+	-fx-text-fill: #16afe9;
+}
+
+.toggleOff {
+	-fx-font-family: "Font Awesome 5 Free Solid";
+	-fx-font-size: 20px;
+	-fx-text-fill: #16afe9;
+	-fx-background-color: -fx-background;
+	-fx-border-width: 0;
+	-fx-border-radius: 0;
+}
