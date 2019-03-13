@@ -138,9 +138,9 @@ public class SnatchFreezer extends Application {
 		camera.setMaxWidth(70);
 		camera.setPrefWidth(70);
 
-		ProgressIndicator transferIndicator = new ProgressIndicator();
 		ProgressIndicator progressIndicator = new ProgressIndicator();
-
+		progressIndicator.setProgress(-1f);
+		
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 		spacer.setMinHeight(Region.USE_PREF_SIZE);
@@ -165,22 +165,16 @@ public class SnatchFreezer extends Application {
 		formPane.add(new Label(messages.getString("label.cycleDelay")), 0, 2);
 		formPane.add(new TextField(), 1, 2);
 		formPane.add(camera, 2, 0, 1, 3);
-		// formPane.add(progressIndicator, 4, 0, 1, 3);
+		 formPane.add(progressIndicator, 4, 0, 1, 3);
 
-		VBox rightPane = new VBox();
-		rightPane.getChildren().addAll(actionPane, controlPane, tabPane);
+		VBox leftPane = new VBox();
+		leftPane.getChildren().addAll(actionPane, controlPane, tabPane);
 
 		HBox controlSplitPane = new HBox();
-		controlSplitPane.getChildren().addAll(valvePane, rightPane);
-
-		// tabPane.prefWidthProperty().bind(formPane.widthProperty());
-		// consoleScrollPane.prefWidthProperty().bind(rightPane.widthProperty());
-		// consoleScrollPane.prefHeightProperty().bind(rightPane.heightProperty());
+		controlSplitPane.getChildren().addAll(valvePane, leftPane);
 
 		VBox root = new VBox();
 		root.getChildren().addAll(menubar, controlSplitPane);
-		controlSplitPane.prefWidthProperty().bind(root.widthProperty());
-		controlSplitPane.maxWidthProperty().bind(root.widthProperty());
 
 		Scene scene = new Scene(root, 1280, 768);
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
@@ -225,7 +219,8 @@ public class SnatchFreezer extends Application {
 		indexColumn.setResizable(false);
 		indexColumn.setEditable(false);
 
-		TableColumn<ObservableActionItemBean, Long> delayColumn = new TableColumn<>(messages.getString("action.table.delay"));
+		TableColumn<ObservableActionItemBean, Long> delayColumn = new TableColumn<>(
+				messages.getString("action.table.delay"));
 		delayColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("delay"));
 		delayColumn.setMinWidth(tableWidth);
 		delayColumn.setMaxWidth(tableWidth);
@@ -233,7 +228,8 @@ public class SnatchFreezer extends Application {
 		delayColumn.setSortable(false);
 		delayColumn.setResizable(false);
 
-		TableColumn<ObservableActionItemBean, Long> releaseColumn = new TableColumn<>(messages.getString("action.table.release"));
+		TableColumn<ObservableActionItemBean, Long> releaseColumn = new TableColumn<>(
+				messages.getString("action.table.release"));
 		releaseColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("release"));
 		releaseColumn.setMinWidth(tableWidth);
 		releaseColumn.setMaxWidth(tableWidth);
@@ -241,7 +237,8 @@ public class SnatchFreezer extends Application {
 		releaseColumn.setSortable(false);
 		releaseColumn.setResizable(false);
 
-		TableColumn<ObservableActionItemBean, Long> delayIncrementColumn = new TableColumn<>(messages.getString("action.table.cycleAdd"));
+		TableColumn<ObservableActionItemBean, Long> delayIncrementColumn = new TableColumn<>(
+				messages.getString("action.table.cycleAdd"));
 		delayIncrementColumn
 				.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("delayIncrement"));
 		delayIncrementColumn.setMinWidth(tableWidth);
@@ -250,7 +247,8 @@ public class SnatchFreezer extends Application {
 		delayIncrementColumn.setSortable(false);
 		delayIncrementColumn.setResizable(false);
 
-		TableColumn<ObservableActionItemBean, Long> releaseIncrementColumn = new TableColumn<>(messages.getString("action.table.cycleAdd"));
+		TableColumn<ObservableActionItemBean, Long> releaseIncrementColumn = new TableColumn<>(
+				messages.getString("action.table.cycleAdd"));
 		releaseIncrementColumn
 				.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("releaseIncrement"));
 		releaseIncrementColumn.setMinWidth(tableWidth);
