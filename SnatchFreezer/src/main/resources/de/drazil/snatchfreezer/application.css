@@ -188,6 +188,70 @@
 	-fx-effect: none;
 }
 
+.tab-pane > .tab-content-area {
+    -fx-background-color: -fx-control-inner-background;
+    -fx-padding: 0.0em; 
+    -fx-border-width:0;
+}
+
+.text-area {
+    -fx-background-color: -fx-shadow-highlight-color, -fx-text-box-border, -fx-control-inner-background;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+    -fx-border-width:0;
+    -fx-prompt-text-fill: derive(-fx-control-inner-background,-30%);
+}
+
+.text-area > .scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+    -fx-border-width:0;
+}
+
+.text-area .content {
+    -fx-padding: 3 5 3 5; 
+    -fx-cursor: text;
+}
+
+.text-area:focused {
+    -fx-background-color: -fx-focus-color, -fx-text-box-border, -fx-control-inner-background;
+    -fx-background-insets: 0;;
+    -fx-background-radius: 0;
+    -fx-prompt-text-fill: transparent;
+}
+
+.scroll-pane {
+    -fx-background-color: -fx-box-border,-fx-background;
+    -fx-background-insets: 0, 1;
+    -fx-padding: 0;
+}
+
+.scroll-pane:focused {
+    -fx-background-color: -fx-focus-color, -fx-box-border, -fx-background;
+    -fx-background-insets: 0;
+}
+
+.scroll-pane > * > .scroll-bar:horizontal {
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.scroll-pane > * > .scroll-bar:vertical {
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.scroll-pane > .corner {
+    -fx-background-color: -fx-box-border, -fx-base;
+    -fx-background-insets: 0;
+}
+
+.scroll-pane:disabled {
+    -fx-opacity: -fx-disabled-opacity;
+}
 
 
 .titledValvePane>.title {
@@ -246,6 +310,11 @@
 
 .orangeButton:hover {
 	-fx-background-color: #5f5c5c;
+}
+
+.orangeButton:armed {
+	-fx-background-color: #5f5c5c;
+	-fx-text-fill: #ffb18c;
 }
 
 .blueButton {
