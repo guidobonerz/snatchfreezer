@@ -36,8 +36,12 @@ public class ConfigurationBuilder {
 		commandList.add(createCommand(ba));
 	}
 
-	public void addRun() {
-		commandList.add(createCommand(NumericConverter.toByteArray(COMMAND_RUN, 1)));
+	public void addRun(int mode) {
+		//commandList.add(createCommand(NumericConverter.toByteArray(COMMAND_RUN, 1)));
+		byte[] ba = NumericConverter.toByteArray(COMMAND_RUN, 1);
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray((byte) 2));
+		ba = ArrayUtil.add(ba, NumericConverter.toByteArray(mode, 2));
+		commandList.add(createCommand(ba));
 	}
 
 	public void sendCancel() {

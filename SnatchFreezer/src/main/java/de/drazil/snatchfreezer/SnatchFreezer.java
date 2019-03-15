@@ -52,6 +52,10 @@ import static de.drazil.snatchfreezer.Constants.READ_DATA_PREFIX;
 import static de.drazil.snatchfreezer.Constants.READ_LENGTH;
 import static de.drazil.snatchfreezer.Constants.SYNCBYTE1;
 import static de.drazil.snatchfreezer.Constants.SYNCBYTE2;
+import static de.drazil.snatchfreezer.Constants.SHOT;
+import static de.drazil.snatchfreezer.Constants.FLUSH_ON;
+import static de.drazil.snatchfreezer.Constants.FLUSH_OFF;
+import static de.drazil.snatchfreezer.Constants.TEST;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -468,13 +472,13 @@ public class SnatchFreezer extends Application {
 		idLabel.getStyleClass().add("fatLabel");
 
 		TextField description = new TextField();
-		Button flush = new Button("\uf576");
+		ToggleButton flush = new ToggleButton("\uf576");
 		flush.getStyleClass().add("blueButton");
 		flush.setUserData(id);
 		flush.setOnAction(value -> {
-			Button b = (Button) value.getSource();
+			ToggleButton b = (ToggleButton) value.getSource();
 			int buttonId = (Integer) b.getUserData();
-			buildFlushConfiguration(buttonId + 2);
+			buildFlushConfiguration(buttonId + 1, b.isSelected());
 		});
 		Button bolt = new Button("\uf0e7");
 		bolt.getStyleClass().add("yellowButton");
@@ -482,7 +486,7 @@ public class SnatchFreezer extends Application {
 		bolt.setOnAction(value -> {
 			Button b = (Button) value.getSource();
 			int buttonId = (Integer) b.getUserData();
-			buildTestConfiguration(buttonId + 2);
+			buildTestConfiguration(buttonId + 1);
 		});
 
 		ToggleButton activeButton = new ToggleButton("\uf205");
@@ -709,18 +713,38 @@ public class SnatchFreezer extends Application {
 		}
 		cb.addCycleCount(cyclesSpinner.getValue());
 		cb.addCycleDelay(cycleDelaySpinner.getValue());
-		cb.addRun();
+		cb.addRun(SHOT);
 		return hasActions > 0;
 	}
 
 	private void buildTestConfiguration(int pin) {
 		cb.reset();
-		cb.addRun();
+		cb.addRun(TEST | (pin << 8));
+		phase = READ_DATA_PREFIX;
+		byteBuffer = new byte[] {};
+		readIndex = 0;
+		canceled = false;
+		try {
+			sendNextCommand();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
-	private void buildFlushConfiguration(int pin) {
+	private void buildFlushConfiguration(int pin, boolean active) {
 		cb.reset();
-		cb.addRun();
+		cb.addRun((active ? FLUSH_ON : FLUSH_OFF) | (pin << 8));
+		phase = READ_DATA_PREFIX;
+		byteBuffer = new byte[] {};
+		readIndex = 0;
+		canceled = false;
+		try {
+			sendNextCommand();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private boolean isTableEmpty(ObservableList<ActionItemPropertyBean> list) {

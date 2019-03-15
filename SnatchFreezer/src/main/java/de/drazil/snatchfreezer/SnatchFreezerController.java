@@ -291,7 +291,7 @@ public class SnatchFreezerController implements Initializable {
 
 		cb.addCycleCount(maxCycles.getValue());
 		cb.addCycleDelay(new Long(cycleDelayTextField.getText()));
-		cb.addRun();
+		cb.addRun(Constants.SHOT);
 	}
 
 	private void setConfiguration(ConfigurationBean configurationBean) {
@@ -332,65 +332,69 @@ public class SnatchFreezerController implements Initializable {
 		note.setText(configurationBean.getNote());
 
 	}
-/*
-	private ConfigurationBean getConfiguration() {
-		ConfigurationBean configurationBean = new ConfigurationBean();
-		configurationBean.setNote(note.getText());
 
-		configurationBean.setCycles(maxCycles.getValue());
-		configurationBean.setCycleDelay(TextfieldUtil.getLongValue(cycleDelayTextField));
-
-		ActionBean cameraActionBean = new ActionBean();
-		cameraActionBean.setPinIndex(0);
-		List<ActionItemBean> cameraActionItemBeanList = new ArrayList<>();
-		cameraActionItemBeanList.add(new ActionItemBean(TextfieldUtil.getLongValue(cameraTriggerDelayTextField),
-				TextfieldUtil.getLongValue(cameraTriggerReleaseTextField), 0, 0, false));
-		cameraActionBean.setActionItemList(cameraActionItemBeanList);
-
-		ActionBean flash1TriggerActionBean = new ActionBean();
-		flash1TriggerActionBean.setPinIndex(0);
-		List<ActionItemBean> flash1TriggerItemBeanList = new ArrayList<>();
-		flash1TriggerItemBeanList
-				.add(new ActionItemBean(TextfieldUtil.getLongValue(flash1TriggerDelayTextField), 10, 0, 0, false));
-		flash1TriggerActionBean.setActionItemList(flash1TriggerItemBeanList);
-
-		ActionBean flash2TriggerActionBean = new ActionBean();
-		flash2TriggerActionBean.setPinIndex(0);
-		List<ActionItemBean> flash2TriggerItemBeanList = new ArrayList<>();
-		flash2TriggerItemBeanList
-				.add(new ActionItemBean(TextfieldUtil.getLongValue(flash2TriggerDelayTextField), 10, 0, 0, false));
-		flash2TriggerActionBean.setActionItemList(flash2TriggerItemBeanList);
-
-		ActionBean valve1ActionBean = new ActionBean();
-		valve1ActionBean.setPinIndex(action1Pin.getSelectionModel().getSelectedIndex());
-		valve1ActionBean.setDescription("Test");
-		valve1ActionBean.setActionItemList(valve1List);
-
-		ActionBean valve2ActionBean = new ActionBean();
-		valve2ActionBean.setPinIndex(action2Pin.getSelectionModel().getSelectedIndex());
-		valve2ActionBean.setDescription("Test");
-		valve2ActionBean.setActionItemList(valve2List);
-
-		ActionBean valve3ActionBean = new ActionBean();
-		valve3ActionBean.setPinIndex(action3Pin.getSelectionModel().getSelectedIndex());
-		valve3ActionBean.setDescription("Test");
-		valve3ActionBean.setActionItemList(valve3List);
-
-		ActionBean valve4ActionBean = new ActionBean();
-		valve4ActionBean.setPinIndex(action4Pin.getSelectionModel().getSelectedIndex());
-		valve4ActionBean.setDescription("Test");
-		valve4ActionBean.setActionItemList(valve4List);
-
-		configurationBean.setCameraActionBean(cameraActionBean);
-		configurationBean.setFlash1ActionBean(flash1TriggerActionBean);
-		configurationBean.setFlash2ActionBean(flash2TriggerActionBean);
-		configurationBean.setValve1ActionBean(valve1ActionBean);
-		configurationBean.setValve2ActionBean(valve2ActionBean);
-		configurationBean.setValve3ActionBean(valve3ActionBean);
-		configurationBean.setValve4ActionBean(valve4ActionBean);
-		return configurationBean;
-	}
-*/
+	/*
+	 * private ConfigurationBean getConfiguration() { ConfigurationBean
+	 * configurationBean = new ConfigurationBean();
+	 * configurationBean.setNote(note.getText());
+	 * 
+	 * configurationBean.setCycles(maxCycles.getValue());
+	 * configurationBean.setCycleDelay(TextfieldUtil.getLongValue(
+	 * cycleDelayTextField));
+	 * 
+	 * ActionBean cameraActionBean = new ActionBean();
+	 * cameraActionBean.setPinIndex(0); List<ActionItemBean>
+	 * cameraActionItemBeanList = new ArrayList<>();
+	 * cameraActionItemBeanList.add(new
+	 * ActionItemBean(TextfieldUtil.getLongValue(cameraTriggerDelayTextField),
+	 * TextfieldUtil.getLongValue(cameraTriggerReleaseTextField), 0, 0, false));
+	 * cameraActionBean.setActionItemList(cameraActionItemBeanList);
+	 * 
+	 * ActionBean flash1TriggerActionBean = new ActionBean();
+	 * flash1TriggerActionBean.setPinIndex(0); List<ActionItemBean>
+	 * flash1TriggerItemBeanList = new ArrayList<>(); flash1TriggerItemBeanList
+	 * .add(new
+	 * ActionItemBean(TextfieldUtil.getLongValue(flash1TriggerDelayTextField), 10,
+	 * 0, 0, false));
+	 * flash1TriggerActionBean.setActionItemList(flash1TriggerItemBeanList);
+	 * 
+	 * ActionBean flash2TriggerActionBean = new ActionBean();
+	 * flash2TriggerActionBean.setPinIndex(0); List<ActionItemBean>
+	 * flash2TriggerItemBeanList = new ArrayList<>(); flash2TriggerItemBeanList
+	 * .add(new
+	 * ActionItemBean(TextfieldUtil.getLongValue(flash2TriggerDelayTextField), 10,
+	 * 0, 0, false));
+	 * flash2TriggerActionBean.setActionItemList(flash2TriggerItemBeanList);
+	 * 
+	 * ActionBean valve1ActionBean = new ActionBean();
+	 * valve1ActionBean.setPinIndex(action1Pin.getSelectionModel().getSelectedIndex(
+	 * )); valve1ActionBean.setDescription("Test");
+	 * valve1ActionBean.setActionItemList(valve1List);
+	 * 
+	 * ActionBean valve2ActionBean = new ActionBean();
+	 * valve2ActionBean.setPinIndex(action2Pin.getSelectionModel().getSelectedIndex(
+	 * )); valve2ActionBean.setDescription("Test");
+	 * valve2ActionBean.setActionItemList(valve2List);
+	 * 
+	 * ActionBean valve3ActionBean = new ActionBean();
+	 * valve3ActionBean.setPinIndex(action3Pin.getSelectionModel().getSelectedIndex(
+	 * )); valve3ActionBean.setDescription("Test");
+	 * valve3ActionBean.setActionItemList(valve3List);
+	 * 
+	 * ActionBean valve4ActionBean = new ActionBean();
+	 * valve4ActionBean.setPinIndex(action4Pin.getSelectionModel().getSelectedIndex(
+	 * )); valve4ActionBean.setDescription("Test");
+	 * valve4ActionBean.setActionItemList(valve4List);
+	 * 
+	 * configurationBean.setCameraActionBean(cameraActionBean);
+	 * configurationBean.setFlash1ActionBean(flash1TriggerActionBean);
+	 * configurationBean.setFlash2ActionBean(flash2TriggerActionBean);
+	 * configurationBean.setValve1ActionBean(valve1ActionBean);
+	 * configurationBean.setValve2ActionBean(valve2ActionBean);
+	 * configurationBean.setValve3ActionBean(valve3ActionBean);
+	 * configurationBean.setValve4ActionBean(valve4ActionBean); return
+	 * configurationBean; }
+	 */
 	private void initializeUi() {
 
 		maxCycles = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 1);
@@ -474,7 +478,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve1List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					//valve1List.add(new ActionItemBean(0, 0, 0, 0, false));
+					// valve1List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -483,7 +487,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve1Grid.getSelectionModel().getSelectedIndex() != -1) {
-					//valve1List.remove(valve1Grid.getSelectionModel().getSelectedIndex());
+					// valve1List.remove(valve1Grid.getSelectionModel().getSelectedIndex());
 				}
 			}
 		});
@@ -492,7 +496,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve2List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					//valve2List.add(new ActionItemBean(0, 0, 0, 0, false));
+					// valve2List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -510,7 +514,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve3List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					//valve3List.add(new ActionItemBean(0, 0, 0, 0, false));
+					// valve3List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -528,7 +532,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve4List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					//valve4List.add(new ActionItemBean(0, 0, 0, 0, false));
+					// valve4List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -1051,16 +1055,11 @@ public class SnatchFreezerController implements Initializable {
 	}
 
 	private void saveConfiguration(File file) {
-/*
-		if (file != null) {
-			ObjectMapper mapper = new ObjectMapper();
-			try {
-				mapper.writeValue(file, getConfiguration());
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		*/
+		/*
+		 * if (file != null) { ObjectMapper mapper = new ObjectMapper(); try {
+		 * mapper.writeValue(file, getConfiguration()); } catch (Exception e) {
+		 * e.printStackTrace(); } }
+		 */
 	}
 
 	private void loadConfiguration(File file) {
@@ -1137,7 +1136,5 @@ public class SnatchFreezerController implements Initializable {
 			}
 		});
 	}
-
-	
 
 }
