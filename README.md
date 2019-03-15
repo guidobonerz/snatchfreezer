@@ -1,13 +1,14 @@
-# SnatchFreezer
+# SnatchFreezer (Beta)
 SnatchFreezer is project for Highspeed photography
 
 Should run on Windows, Mac and Linux
 
 This project also contains the complete project including:
-- Eagle PCB
+- JavaFX - Controller Frontend
 - Arduino Sketch
-- Controller Frontend
+- Eagle PCB
+
 
 
 ## Controller View
-![screenshot1](https://github.com/guidobonerz/nerdsuite/blob/develop/docs/ControllerView.png)
+![screenshot1](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/ControllerView.png)
