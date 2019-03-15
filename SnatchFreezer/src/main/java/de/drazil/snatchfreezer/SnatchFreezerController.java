@@ -130,9 +130,9 @@ public class SnatchFreezerController implements Initializable {
 	// 00|001001 = finished
 	// 00|111111 = dummy
 	// 10|001001 = echo
-	// 10|001010 = log_info
-	// 10|001011 = log_debug
-	// 10|001100 = log_error
+	// 11|001010 = log_info
+	// 11|001011 = log_debug
+	// 11|001100 = log_error
 
 	// llllllll = length
 

@@ -332,13 +332,17 @@
 }
 
 .yellowButton {
-	-fx-text-fill: #ffff00;
+	-fx-text-fill: #d5d500;
+	
 }
 
 .yellowButton:hover {
 	-fx-background-color: #5f5c5c;
 }
-
+.yellowButton:armed {
+	-fx-background-color: #5f5c5c;
+	-fx-text-fill: #ffff4f;
+}
 .redButton {
 	-fx-text-fill: #d20000;
 }
