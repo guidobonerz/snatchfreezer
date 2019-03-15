@@ -354,7 +354,7 @@ public class SnatchFreezer extends Application {
 		VBox root = new VBox();
 		root.getChildren().addAll(menubar, controlSplitPane);
 
-		Scene scene = new Scene(root, 1180, 768);
+		Scene scene = new Scene(root, 1220, 768);
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 		primaryStage.setTitle("Snatchfreezer");
 		// primaryStage.setMaximized(true);
@@ -473,7 +473,7 @@ public class SnatchFreezer extends Application {
 
 		TextField description = new TextField();
 		ToggleButton flush = new ToggleButton("\uf576");
-		flush.getStyleClass().add("blueButton");
+		flush.getStyleClass().add("flushButton");
 		flush.setUserData(id);
 		flush.setOnAction(value -> {
 			ToggleButton b = (ToggleButton) value.getSource();
@@ -481,7 +481,7 @@ public class SnatchFreezer extends Application {
 			buildFlushConfiguration(buttonId + 1, b.isSelected());
 		});
 		Button bolt = new Button("\uf0e7");
-		bolt.getStyleClass().add("yellowButton");
+		bolt.getStyleClass().add("testButton");
 		bolt.setUserData(id);
 		bolt.setOnAction(value -> {
 			Button b = (Button) value.getSource();
