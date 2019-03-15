@@ -10,6 +10,9 @@ import lombok.Setter;
 public class ActionItemBean {
 	@Getter
 	@Setter
+	private long id;
+	@Getter
+	@Setter
 	private long delay;
 	@Getter
 	@Setter

@@ -73,7 +73,7 @@ import de.drazil.snatchfreezer.model.ActionBean;
 import de.drazil.snatchfreezer.model.ActionItemBean;
 import de.drazil.snatchfreezer.model.ActionPinBean;
 import de.drazil.snatchfreezer.model.ConfigurationBean;
-import de.drazil.snatchfreezer.model.ObservableActionItemBean;
+import de.drazil.snatchfreezer.model.ActionItemPropertyBean;
 import de.drazil.util.ArrayUtil;
 import de.drazil.util.NumericConverter;
 import de.drazil.util.TextfieldUtil;
@@ -332,7 +332,7 @@ public class SnatchFreezerController implements Initializable {
 		note.setText(configurationBean.getNote());
 
 	}
-
+/*
 	private ConfigurationBean getConfiguration() {
 		ConfigurationBean configurationBean = new ConfigurationBean();
 		configurationBean.setNote(note.getText());
@@ -390,7 +390,7 @@ public class SnatchFreezerController implements Initializable {
 		configurationBean.setValve4ActionBean(valve4ActionBean);
 		return configurationBean;
 	}
-
+*/
 	private void initializeUi() {
 
 		maxCycles = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 1);
@@ -474,7 +474,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve1List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					valve1List.add(new ActionItemBean(0, 0, 0, 0, false));
+					//valve1List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -483,7 +483,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve1Grid.getSelectionModel().getSelectedIndex() != -1) {
-					valve1List.remove(valve1Grid.getSelectionModel().getSelectedIndex());
+					//valve1List.remove(valve1Grid.getSelectionModel().getSelectedIndex());
 				}
 			}
 		});
@@ -492,7 +492,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve2List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					valve2List.add(new ActionItemBean(0, 0, 0, 0, false));
+					//valve2List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -510,7 +510,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve3List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					valve3List.add(new ActionItemBean(0, 0, 0, 0, false));
+					//valve3List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -528,7 +528,7 @@ public class SnatchFreezerController implements Initializable {
 			@Override
 			public void handle(ActionEvent ev) {
 				if (valve4List.size() < MAX_ACTUATOR_TIMING_SETS) {
-					valve4List.add(new ActionItemBean(0, 0, 0, 0, false));
+					//valve4List.add(new ActionItemBean(0, 0, 0, 0, false));
 				}
 			}
 		});
@@ -1051,7 +1051,7 @@ public class SnatchFreezerController implements Initializable {
 	}
 
 	private void saveConfiguration(File file) {
-
+/*
 		if (file != null) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
@@ -1060,6 +1060,7 @@ public class SnatchFreezerController implements Initializable {
 				e.printStackTrace();
 			}
 		}
+		*/
 	}
 
 	private void loadConfiguration(File file) {

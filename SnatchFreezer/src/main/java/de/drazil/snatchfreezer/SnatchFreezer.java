@@ -7,11 +7,16 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
-import de.drazil.snatchfreezer.model.ObservableActionItemBean;
+import de.drazil.snatchfreezer.model.ActionBean;
+import de.drazil.snatchfreezer.model.ActionItemBean;
+import de.drazil.snatchfreezer.model.ActionItemPropertyBean;
+import de.drazil.snatchfreezer.model.Settings;
 import de.drazil.util.EditCell;
 import de.drazil.util.Long2StringConverter;
 import javafx.application.Application;
+import javafx.beans.property.Property;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
@@ -51,10 +56,13 @@ public class SnatchFreezer extends Application {
 
 	private GridPane valveBox = null;
 	private GridPane actionBox = null;
-	private List<ObservableList<ObservableActionItemBean>> mainList;
 
 	private File file = null;
 	private ResourceBundle messages = null;
+	private Settings settings = null;
+	private List<ObservableList<ActionItemPropertyBean>> actionList = null;
+	private List<Property<?>> activePropertyList = null;
+	private List<Property<?>> actionDescriptionPropertyList = null;
 	/*
 	 * @Override public void start(Stage stage) throws Exception {
 	 * setUserAgentStylesheet(STYLESHEET_MODENA);
@@ -79,15 +87,22 @@ public class SnatchFreezer extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		actionList = new ArrayList<ObservableList<ActionItemPropertyBean>>();
+		activePropertyList = new ArrayList<Property<?>>();
 		messages = ResourceBundle.getBundle("de.drazil.snatchfreezer.i18n.message", Locale.ENGLISH);
 
-		Font font = Font.loadFont(getClass().getResource("fa-solid-900.ttf").toExternalForm(), 10);
-
-		mainList = new ArrayList<ObservableList<ObservableActionItemBean>>();
+		Font.loadFont(getClass().getResource("fa-solid-900.ttf").toExternalForm(), 10);
 
 		Menu applicationMenu = new Menu(messages.getString("menu.application"));
 		MenuItem newProject = new MenuItem(messages.getString("menu.application.new"));
 		MenuItem loadProject = new MenuItem(messages.getString("menu.application.load"));
+		loadProject.setOnAction(value -> {
+			if (file == null) {
+				FileChooser fc = new FileChooser();
+				file = fc.showOpenDialog(null);
+			}
+			loadSettings(file);
+		});
 		MenuItem saveProject = new MenuItem(messages.getString("menu.application.save"));
 		saveProject.setOnAction(value -> {
 			if (file == null) {
@@ -103,6 +118,10 @@ public class SnatchFreezer extends Application {
 			saveSettings(file);
 		});
 		MenuItem quitApplciation = new MenuItem(messages.getString("menu.application.quit"));
+		quitApplciation.setOnAction(value -> {
+			System.exit(0);
+		});
+
 		applicationMenu.getItems().addAll(newProject, loadProject, saveProject, saveAsProject, new SeparatorMenuItem(),
 				quitApplciation);
 		Menu helpMenu = new Menu(messages.getString("menu.help"));
@@ -118,12 +137,13 @@ public class SnatchFreezer extends Application {
 		TitledPane valvePane = new TitledPane(messages.getString("pane.devices"), valveBox);
 		valvePane.setCollapsible(false);
 		valvePane.getStyleClass().add("titledValvePane");
+
 		createTableSet(valveBox, 6, 5);
 
 		actionBox = new GridPane();
-		TitledPane actionPane = new TitledPane(messages.getString("pane.camera_flash"), actionBox);
-		actionPane.getStyleClass().add("titledActionPane");
-		actionPane.setCollapsible(false);
+		TitledPane cameraFlashPane = new TitledPane(messages.getString("pane.camera_flash"), actionBox);
+		cameraFlashPane.getStyleClass().add("titledActionPane");
+		cameraFlashPane.setCollapsible(false);
 		createTableSet(actionBox, 4, 1);
 
 		HBox actionButtonPane = new HBox();
@@ -138,18 +158,16 @@ public class SnatchFreezer extends Application {
 		camera.setMaxWidth(70);
 		camera.setPrefWidth(70);
 
-		ProgressIndicator transferIndicator = new ProgressIndicator();
 		ProgressIndicator progressIndicator = new ProgressIndicator();
-
-		Region spacer = new Region();
-		HBox.setHgrow(spacer, Priority.ALWAYS);
-		spacer.setMinHeight(Region.USE_PREF_SIZE);
+		progressIndicator.setProgress(-1f);
 
 		TextArea console = new TextArea();
 		TextArea description = new TextArea();
 
+		VBox control2 = new VBox();
 		GridPane formPane = new GridPane();
-		TitledPane controlPane = new TitledPane(messages.getString("pane.control"), formPane);
+		TitledPane controlPane = new TitledPane(messages.getString("pane.control"), control2);
+
 		controlPane.getStyleClass().add("titledControlPane");
 		controlPane.setCollapsible(false);
 
@@ -164,23 +182,25 @@ public class SnatchFreezer extends Application {
 		formPane.add(new Spinner<Long>(), 1, 1);
 		formPane.add(new Label(messages.getString("label.cycleDelay")), 0, 2);
 		formPane.add(new TextField(), 1, 2);
-		formPane.add(camera, 2, 0, 1, 3);
-		// formPane.add(progressIndicator, 4, 0, 1, 3);
+
+		HBox actionBar = new HBox();
+		actionBar.getChildren().addAll(camera, progressIndicator);
+		formPane.add(actionBar, 2, 0, 1, 3);
+
+		control2.getChildren().addAll(formPane, tabPane);
+		tabPane.setMinHeight(250);
 
 		VBox rightPane = new VBox();
-		rightPane.getChildren().addAll(actionPane, controlPane, tabPane);
+
+		rightPane.getChildren().addAll(cameraFlashPane, controlPane);
+
+		rightPane.prefHeightProperty().bind(valvePane.heightProperty());
 
 		HBox controlSplitPane = new HBox();
 		controlSplitPane.getChildren().addAll(valvePane, rightPane);
 
-		// tabPane.prefWidthProperty().bind(formPane.widthProperty());
-		// consoleScrollPane.prefWidthProperty().bind(rightPane.widthProperty());
-		// consoleScrollPane.prefHeightProperty().bind(rightPane.heightProperty());
-
 		VBox root = new VBox();
 		root.getChildren().addAll(menubar, controlSplitPane);
-		controlSplitPane.prefWidthProperty().bind(root.widthProperty());
-		controlSplitPane.maxWidthProperty().bind(root.widthProperty());
 
 		Scene scene = new Scene(root, 1280, 768);
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
@@ -207,17 +227,19 @@ public class SnatchFreezer extends Application {
 
 	@SuppressWarnings("unchecked")
 	private Node createTable(int id, int rowCount) {
-		VBox vbox = new VBox();
-		ToolBar toolbar = new ToolBar();
+
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
-		spacer.setMinWidth(Region.USE_PREF_SIZE);
+		spacer.setMinWidth(Region.USE_COMPUTED_SIZE);
 
 		int tableWidth = 60;
-		TableView<ObservableActionItemBean> table = new TableView<>(createRowSet(rowCount));
+		ObservableList<ActionItemPropertyBean> list = createRowSet(rowCount);
+		actionList.add(list);
 
-		TableColumn<ObservableActionItemBean, Long> indexColumn = new TableColumn<>("#");
-		indexColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("index"));
+		TableView<ActionItemPropertyBean> table = new TableView<>(list);
+
+		TableColumn<ActionItemPropertyBean, Long> indexColumn = new TableColumn<>("#");
+		indexColumn.setCellValueFactory(new PropertyValueFactory<ActionItemPropertyBean, Long>("index"));
 		indexColumn.setMinWidth(30);
 		indexColumn.setMaxWidth(30);
 		indexColumn.setPrefWidth(30);
@@ -225,34 +247,38 @@ public class SnatchFreezer extends Application {
 		indexColumn.setResizable(false);
 		indexColumn.setEditable(false);
 
-		TableColumn<ObservableActionItemBean, Long> delayColumn = new TableColumn<>(messages.getString("action.table.delay"));
-		delayColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("delay"));
+		TableColumn<ActionItemPropertyBean, Long> delayColumn = new TableColumn<>(
+				messages.getString("action.table.delay"));
+		delayColumn.setCellValueFactory(new PropertyValueFactory<ActionItemPropertyBean, Long>("delay"));
 		delayColumn.setMinWidth(tableWidth);
 		delayColumn.setMaxWidth(tableWidth);
 		delayColumn.setPrefWidth(tableWidth);
 		delayColumn.setSortable(false);
 		delayColumn.setResizable(false);
 
-		TableColumn<ObservableActionItemBean, Long> releaseColumn = new TableColumn<>(messages.getString("action.table.release"));
-		releaseColumn.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("release"));
+		TableColumn<ActionItemPropertyBean, Long> releaseColumn = new TableColumn<>(
+				messages.getString("action.table.release"));
+		releaseColumn.setCellValueFactory(new PropertyValueFactory<ActionItemPropertyBean, Long>("release"));
 		releaseColumn.setMinWidth(tableWidth);
 		releaseColumn.setMaxWidth(tableWidth);
 		releaseColumn.setPrefWidth(tableWidth);
 		releaseColumn.setSortable(false);
 		releaseColumn.setResizable(false);
 
-		TableColumn<ObservableActionItemBean, Long> delayIncrementColumn = new TableColumn<>(messages.getString("action.table.cycleAdd"));
+		TableColumn<ActionItemPropertyBean, Long> delayIncrementColumn = new TableColumn<>(
+				messages.getString("action.table.cycleAdd"));
 		delayIncrementColumn
-				.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("delayIncrement"));
+				.setCellValueFactory(new PropertyValueFactory<ActionItemPropertyBean, Long>("delayIncrement"));
 		delayIncrementColumn.setMinWidth(tableWidth);
 		delayIncrementColumn.setMaxWidth(tableWidth);
 		delayIncrementColumn.setPrefWidth(tableWidth);
 		delayIncrementColumn.setSortable(false);
 		delayIncrementColumn.setResizable(false);
 
-		TableColumn<ObservableActionItemBean, Long> releaseIncrementColumn = new TableColumn<>(messages.getString("action.table.cycleAdd"));
+		TableColumn<ActionItemPropertyBean, Long> releaseIncrementColumn = new TableColumn<>(
+				messages.getString("action.table.cycleAdd"));
 		releaseIncrementColumn
-				.setCellValueFactory(new PropertyValueFactory<ObservableActionItemBean, Long>("releaseIncrement"));
+				.setCellValueFactory(new PropertyValueFactory<ActionItemPropertyBean, Long>("releaseIncrement"));
 		releaseIncrementColumn.setMinWidth(tableWidth);
 		releaseIncrementColumn.setMaxWidth(tableWidth);
 		releaseIncrementColumn.setPrefWidth(tableWidth);
@@ -287,13 +313,11 @@ public class SnatchFreezer extends Application {
 		Label idLabel = new Label(Integer.toString(id));
 		idLabel.getStyleClass().add("fatLabel");
 
-		ToggleButton activeButton = new ToggleButton("\uf205");
-		activeButton.getStyleClass().add("toggleOn");
-
 		TextField description = new TextField();
-
 		Button menu = new Button("\uf142");
 
+		ToggleButton activeButton = new ToggleButton("\uf205");
+		activeButton.getStyleClass().add("toggleOn");
 		activeButton.setSelected(true);
 		activeButton.setOnAction(value -> {
 			table.setDisable(!activeButton.isSelected());
@@ -306,28 +330,32 @@ public class SnatchFreezer extends Application {
 			activeButton.setText(activeButton.isSelected() ? "\uf205" : "\uf204");
 		});
 
+		activePropertyList.add(activeButton.selectedProperty());
+
+		ToolBar toolbar = new ToolBar();
 		toolbar.getItems().add(idLabel);
 		toolbar.getItems().add(activeButton);
 		toolbar.getItems().add(description);
 		toolbar.getItems().add(spacer);
 		toolbar.getItems().add(menu);
 
+		VBox vbox = new VBox();
 		vbox.getChildren().addAll(toolbar, table);
 
 		return vbox;
 	}
 
 	@SuppressWarnings("unchecked")
-	private void editFocusedCell(TableView<ObservableActionItemBean> table) {
-		final TablePosition<ObservableActionItemBean, ?> focusedCell = table.focusModelProperty().get()
+	private void editFocusedCell(TableView<ActionItemPropertyBean> table) {
+		final TablePosition<ActionItemPropertyBean, ?> focusedCell = table.focusModelProperty().get()
 				.focusedCellProperty().get();
 		table.edit(focusedCell.getRow(), focusedCell.getTableColumn());
 	}
 
 	@SuppressWarnings("unchecked")
-	private void selectPrevious(TableView<ObservableActionItemBean> table) {
+	private void selectPrevious(TableView<ActionItemPropertyBean> table) {
 		if (table.getSelectionModel().isCellSelectionEnabled()) {
-			TablePosition<ObservableActionItemBean, ?> pos = table.getFocusModel().getFocusedCell();
+			TablePosition<ActionItemPropertyBean, ?> pos = table.getFocusModel().getFocusedCell();
 			if (pos.getColumn() - 1 >= 0) {
 				table.getSelectionModel().select(pos.getRow(), getTableColumn(table, pos.getTableColumn(), -1));
 			} else if (pos.getRow() < table.getItems().size()) {
@@ -344,76 +372,120 @@ public class SnatchFreezer extends Application {
 		}
 	}
 
-	private TableColumn<ObservableActionItemBean, ?> getTableColumn(TableView<ObservableActionItemBean> table,
-			TableColumn<ObservableActionItemBean, ?> column, int offset) {
+	private TableColumn<ActionItemPropertyBean, ?> getTableColumn(TableView<ActionItemPropertyBean> table,
+			TableColumn<ActionItemPropertyBean, ?> column, int offset) {
 		int columnIndex = table.getVisibleLeafIndex(column);
 		int newColumnIndex = columnIndex + offset;
 		return table.getVisibleLeafColumn(newColumnIndex);
 	}
 
-	private void setIndexColumnFactory(final TableView<ObservableActionItemBean> table,
-			final TableColumn<ObservableActionItemBean, Long> column) {
-		column.setCellFactory(EditCell.<ObservableActionItemBean, Long>forTableColumn(new Long2StringConverter()));
+	private void setIndexColumnFactory(final TableView<ActionItemPropertyBean> table,
+			final TableColumn<ActionItemPropertyBean, Long> column) {
+		column.setCellFactory(EditCell.<ActionItemPropertyBean, Long>forTableColumn(new Long2StringConverter()));
 
 		column.setOnEditCommit(event -> {
 			final Long value = event.getNewValue() != null ? event.getNewValue() : event.getOldValue();
-			((ObservableActionItemBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
+			((ActionItemPropertyBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
 					.setIndex(value);
 			table.refresh();
 		});
 	}
 
-	private void setDelayColumnFactory(final TableView<ObservableActionItemBean> table,
-			final TableColumn<ObservableActionItemBean, Long> column) {
-		column.setCellFactory(EditCell.<ObservableActionItemBean, Long>forTableColumn(new Long2StringConverter()));
+	private void setDelayColumnFactory(final TableView<ActionItemPropertyBean> table,
+			final TableColumn<ActionItemPropertyBean, Long> column) {
+		column.setCellFactory(EditCell.<ActionItemPropertyBean, Long>forTableColumn(new Long2StringConverter()));
 		column.setOnEditCommit(event -> {
 			final Long value = event.getNewValue() != null ? event.getNewValue() : event.getOldValue();
-			((ObservableActionItemBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
+			((ActionItemPropertyBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
 					.setDelay(value);
 			table.refresh();
 		});
 	}
 
-	private void setReleaseColumnFactory(final TableView<ObservableActionItemBean> table,
-			final TableColumn<ObservableActionItemBean, Long> column) {
-		column.setCellFactory(EditCell.<ObservableActionItemBean, Long>forTableColumn(new Long2StringConverter()));
+	private void setReleaseColumnFactory(final TableView<ActionItemPropertyBean> table,
+			final TableColumn<ActionItemPropertyBean, Long> column) {
+		column.setCellFactory(EditCell.<ActionItemPropertyBean, Long>forTableColumn(new Long2StringConverter()));
 		column.setOnEditCommit(event -> {
 			final Long value = event.getNewValue() != null ? event.getNewValue() : event.getOldValue();
-			((ObservableActionItemBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
+			((ActionItemPropertyBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
 					.setRelease(value);
 			table.refresh();
 		});
 	}
 
-	private void setDelayIncrementColumnFactory(final TableView<ObservableActionItemBean> table,
-			final TableColumn<ObservableActionItemBean, Long> column) {
-		column.setCellFactory(EditCell.<ObservableActionItemBean, Long>forTableColumn(new Long2StringConverter()));
+	private void setDelayIncrementColumnFactory(final TableView<ActionItemPropertyBean> table,
+			final TableColumn<ActionItemPropertyBean, Long> column) {
+		column.setCellFactory(EditCell.<ActionItemPropertyBean, Long>forTableColumn(new Long2StringConverter()));
 		column.setOnEditCommit(event -> {
 			final Long value = event.getNewValue() != null ? event.getNewValue() : event.getOldValue();
-			((ObservableActionItemBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
+			((ActionItemPropertyBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
 					.setDelayIncrement(value);
 			table.refresh();
 		});
 	}
 
-	private void setReleaseIncrementColumnFactory(final TableView<ObservableActionItemBean> table,
-			final TableColumn<ObservableActionItemBean, Long> column) {
-		column.setCellFactory(EditCell.<ObservableActionItemBean, Long>forTableColumn(new Long2StringConverter()));
+	private void setReleaseIncrementColumnFactory(final TableView<ActionItemPropertyBean> table,
+			final TableColumn<ActionItemPropertyBean, Long> column) {
+		column.setCellFactory(EditCell.<ActionItemPropertyBean, Long>forTableColumn(new Long2StringConverter()));
 		column.setOnEditCommit(event -> {
 			final Long value = event.getNewValue() != null ? event.getNewValue() : event.getOldValue();
-			((ObservableActionItemBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
+			((ActionItemPropertyBean) event.getTableView().getItems().get(event.getTablePosition().getRow()))
 					.setReleaseIncrement(value);
 			table.refresh();
 		});
 	}
 
-	private ObservableList<ObservableActionItemBean> createRowSet(int count) {
-		ObservableList<ObservableActionItemBean> list = FXCollections.observableArrayList();
+	private ObservableList<ActionItemPropertyBean> createRowSet(int count) {
+		ObservableList<ActionItemPropertyBean> list = FXCollections.observableArrayList();
 		for (int i = 0; i < count; i++) {
-			list.add(new ObservableActionItemBean(new Long(i + 1), 0L, 0L, 0L, 0L));
+			ActionItemBean actionBean = new ActionItemBean(i + 1, 0L, 0L, 0L, 0L, false);
+			list.add(new ActionItemPropertyBean(actionBean));
 		}
-		mainList.add(list);
+
 		return list;
+	}
+
+	private Settings getSettings() {
+		if (settings == null) {
+			settings = new Settings();
+
+			List<ActionBean> actionBeanList = new ArrayList<ActionBean>();
+			for (int i = 0; i < actionList.size(); i++) {
+				List<ActionItemPropertyBean> list = actionList.get(i);
+
+				List<ActionItemBean> beanList = new ArrayList<ActionItemBean>();
+				for (int j = 0; j < list.size(); j++) {
+					beanList.add(list.get(j).getBean());
+				}
+				ActionBean actionBean = new ActionBean(i + 1, true, "", beanList);
+				actionBeanList.add(actionBean);
+			}
+			settings.setActionBeanList(actionBeanList);
+			settings.setCycleDelay(1000);
+			settings.setCycles(1);
+			settings.setDescription("lorem ipsum");
+		}
+		return settings;
+	}
+
+	private void setSettings(Settings settings) {
+		this.settings = settings;
+
+		List<ActionBean> actionBeanList = settings.getActionBeanList();
+		
+
+		for (int i = 0; i < actionBeanList.size(); i++) {
+			ObservableList<ActionItemPropertyBean> list= actionList.get(i);
+			list.clear();
+			List<ActionItemBean> actionItemBeanList = actionBeanList.get(i).getActionItemList();
+			for (int j = 0; j < actionItemBeanList.size(); j++) {
+				
+				ActionItemBean actionItembean = actionItemBeanList.get(j);
+				list.add(new ActionItemPropertyBean(actionItembean.getId(), actionItembean.getDelay(),
+						actionItembean.getRelease(), actionItembean.getDelayIncrement(),
+						actionItembean.getReleaseIncrement(), actionItembean.isIgnore()));
+			}
+		}
 	}
 
 	private void saveSettings(File file) {
@@ -421,7 +493,19 @@ public class SnatchFreezer extends Application {
 		if (file != null) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
-				mapper.writeValue(file, mainList);
+				mapper.enable(SerializationFeature.INDENT_OUTPUT);
+				mapper.writeValue(file, getSettings());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private void loadSettings(File file) {
+		if (file != null) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				setSettings(mapper.readValue(file, Settings.class));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

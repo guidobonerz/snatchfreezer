@@ -9,11 +9,13 @@ import lombok.Setter;
 
 @NoArgsConstructor
 @AllArgsConstructor
-public class ActionBean
-{
+public class ActionBean {
 	@Getter
 	@Setter
 	private int pinIndex;
+	@Getter
+	@Setter
+	private Boolean activ;
 	@Getter
 	@Setter
 	private String description;
