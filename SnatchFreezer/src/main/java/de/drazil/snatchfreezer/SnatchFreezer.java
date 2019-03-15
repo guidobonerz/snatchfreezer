@@ -1,5 +1,7 @@
 package de.drazil.snatchfreezer;
 
+import static de.drazil.snatchfreezer.Constants.OFF;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +65,12 @@ public class SnatchFreezer extends Application {
 	private List<ObservableList<ActionItemPropertyBean>> actionList = null;
 	private List<Property<?>> activePropertyList = null;
 	private List<Property<?>> actionDescriptionPropertyList = null;
+	private ConfigurationBuilder cb = null;
+	private ComboBox<Object> serialPortComboBox = null;
+	private Spinner<Integer> cyclesSpinner = null;
+	private Spinner<Integer> cycleDelaySpinner = null;
+	private TextArea console = null;
+	private TextArea description = null;
 	/*
 	 * @Override public void start(Stage stage) throws Exception {
 	 * setUserAgentStylesheet(STYLESHEET_MODENA);
@@ -87,6 +95,7 @@ public class SnatchFreezer extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		cb = new ConfigurationBuilder();
 		actionList = new ArrayList<ObservableList<ActionItemPropertyBean>>();
 		activePropertyList = new ArrayList<Property<?>>();
 		messages = ResourceBundle.getBundle("de.drazil.snatchfreezer.i18n.message", Locale.ENGLISH);
@@ -157,12 +166,15 @@ public class SnatchFreezer extends Application {
 		camera.setMinWidth(70);
 		camera.setMaxWidth(70);
 		camera.setPrefWidth(70);
+		camera.setOnAction(value -> {
+			buildShotConfiguration();
+		});
 
 		ProgressIndicator progressIndicator = new ProgressIndicator();
 		progressIndicator.setProgress(-1f);
 
-		TextArea console = new TextArea();
-		TextArea description = new TextArea();
+		console = new TextArea();
+		description = new TextArea();
 
 		VBox control2 = new VBox();
 		GridPane formPane = new GridPane();
@@ -176,12 +188,20 @@ public class SnatchFreezer extends Application {
 		tabPane.getTabs().add(new Tab(messages.getString("tab.console"), console));
 		tabPane.getTabs().add(new Tab(messages.getString("tab.description"), description));
 
+		serialPortComboBox = new ComboBox<Object>();
 		formPane.add(new Label(messages.getString("label.serialPort")), 0, 0);
-		formPane.add(new ComboBox<String>(), 1, 0);
+		formPane.add(serialPortComboBox, 1, 0);
+
+		cyclesSpinner = new Spinner<Integer>(1, 50, 1);
+		cyclesSpinner.setEditable(true);
+
 		formPane.add(new Label(messages.getString("label.cycles")), 0, 1);
-		formPane.add(new Spinner<Long>(), 1, 1);
+		formPane.add(cyclesSpinner, 1, 1);
+
+		cycleDelaySpinner = new Spinner<Integer>(0, 10000, 0, 500);
+		cycleDelaySpinner.setEditable(true);
 		formPane.add(new Label(messages.getString("label.cycleDelay")), 0, 2);
-		formPane.add(new TextField(), 1, 2);
+		formPane.add(cycleDelaySpinner, 1, 2);
 
 		HBox actionBar = new HBox();
 		actionBar.getChildren().addAll(camera, progressIndicator);
@@ -217,7 +237,7 @@ public class SnatchFreezer extends Application {
 				x = 0;
 				y++;
 			}
-			ScrollPane sp = new ScrollPane(createTable(i + 1, rowCount));
+			ScrollPane sp = new ScrollPane(createTable(i + 1, rowCount, rowCount > 1));
 			sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 			sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 			grid.add(sp, x, y);
@@ -226,7 +246,7 @@ public class SnatchFreezer extends Application {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Node createTable(int id, int rowCount) {
+	private Node createTable(int id, int rowCount, boolean canFlush) {
 
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -314,7 +334,16 @@ public class SnatchFreezer extends Application {
 		idLabel.getStyleClass().add("fatLabel");
 
 		TextField description = new TextField();
-		Button menu = new Button("\uf142");
+		Button flush = new Button("\uf576");
+		flush.getStyleClass().add("blueButton");
+		flush.setOnAction(value -> {
+			buildFlushConfiguration();
+		});
+		Button heart = new Button("\uf004");
+		heart.getStyleClass().add("redButton");
+		heart.setOnAction(value -> {
+			buildTestConfiguration();
+		});
 
 		ToggleButton activeButton = new ToggleButton("\uf205");
 		activeButton.getStyleClass().add("toggleOn");
@@ -323,7 +352,8 @@ public class SnatchFreezer extends Application {
 			table.setDisable(!activeButton.isSelected());
 			idLabel.setDisable(!activeButton.isSelected());
 			description.setDisable(!activeButton.isSelected());
-			menu.setDisable(!activeButton.isSelected());
+			heart.setDisable(!activeButton.isSelected());
+			flush.setDisable(!activeButton.isSelected());
 			activeButton.getStyleClass().remove("toggleOn");
 			activeButton.getStyleClass().remove("toggleOff");
 			activeButton.getStyleClass().add(activeButton.isSelected() ? "toggleOn" : "toggleOff");
@@ -336,8 +366,12 @@ public class SnatchFreezer extends Application {
 		toolbar.getItems().add(idLabel);
 		toolbar.getItems().add(activeButton);
 		toolbar.getItems().add(description);
+		if (canFlush) {
+			toolbar.getItems().add(flush);
+		}
+
 		toolbar.getItems().add(spacer);
-		toolbar.getItems().add(menu);
+		toolbar.getItems().add(heart);
 
 		VBox vbox = new VBox();
 		vbox.getChildren().addAll(toolbar, table);
@@ -448,23 +482,23 @@ public class SnatchFreezer extends Application {
 	private Settings getSettings() {
 		if (settings == null) {
 			settings = new Settings();
-
-			List<ActionBean> actionBeanList = new ArrayList<ActionBean>();
-			for (int i = 0; i < actionList.size(); i++) {
-				List<ActionItemPropertyBean> list = actionList.get(i);
-
-				List<ActionItemBean> beanList = new ArrayList<ActionItemBean>();
-				for (int j = 0; j < list.size(); j++) {
-					beanList.add(list.get(j).getBean());
-				}
-				ActionBean actionBean = new ActionBean(i + 1, true, "", beanList);
-				actionBeanList.add(actionBean);
-			}
-			settings.setActionBeanList(actionBeanList);
-			settings.setCycleDelay(1000);
-			settings.setCycles(1);
-			settings.setDescription("lorem ipsum");
 		}
+		List<ActionBean> actionBeanList = new ArrayList<ActionBean>();
+		for (int i = 0; i < actionList.size(); i++) {
+			List<ActionItemPropertyBean> list = actionList.get(i);
+
+			List<ActionItemBean> beanList = new ArrayList<ActionItemBean>();
+			for (int j = 0; j < list.size(); j++) {
+				beanList.add(list.get(j).getBean());
+			}
+			ActionBean actionBean = new ActionBean(i + 1, true, "", beanList);
+			actionBeanList.add(actionBean);
+		}
+		settings.setActionBeanList(actionBeanList);
+		settings.setCycleDelay(cycleDelaySpinner.getValue());
+		settings.setCycles(cyclesSpinner.getValue());
+		settings.setDescription(description.getText());
+
 		return settings;
 	}
 
@@ -472,14 +506,16 @@ public class SnatchFreezer extends Application {
 		this.settings = settings;
 
 		List<ActionBean> actionBeanList = settings.getActionBeanList();
-		
+		description.setText(settings.getDescription());
+		cycleDelaySpinner.getValueFactory().setValue(settings.getCycleDelay());
+		cyclesSpinner.getValueFactory().setValue(settings.getCycles());
 
 		for (int i = 0; i < actionBeanList.size(); i++) {
-			ObservableList<ActionItemPropertyBean> list= actionList.get(i);
+			ObservableList<ActionItemPropertyBean> list = actionList.get(i);
 			list.clear();
 			List<ActionItemBean> actionItemBeanList = actionBeanList.get(i).getActionItemList();
 			for (int j = 0; j < actionItemBeanList.size(); j++) {
-				
+
 				ActionItemBean actionItembean = actionItemBeanList.get(j);
 				list.add(new ActionItemPropertyBean(actionItembean.getId(), actionItembean.getDelay(),
 						actionItembean.getRelease(), actionItembean.getDelayIncrement(),
@@ -512,4 +548,36 @@ public class SnatchFreezer extends Application {
 		}
 	}
 
+	private void buildShotConfiguration() {
+		cb.reset();
+		cb.addSetLogLevel(OFF);
+		cb.addReset();
+		for (int i = 0; i < actionList.size(); i++) {
+			cb.addAction(i + 2);
+			ObservableList<ActionItemPropertyBean> list = actionList.get(i);
+			for (int j = 0; j < list.size(); j++) {
+				ActionItemPropertyBean bean = list.get(j);
+				if (!isEmptyAction(bean)) {
+					cb.addActionTimings(bean.getDelay(), bean.getRelease(), bean.getDelayIncrement(),
+							bean.getReleaseIncrement());
+				}
+			}
+		}
+		cb.addCycleCount(cyclesSpinner.getValue());
+		cb.addCycleDelay(cycleDelaySpinner.getValue());
+		cb.addRun();
+	}
+
+	private void buildTestConfiguration() {
+
+	}
+
+	private void buildFlushConfiguration() {
+
+	}
+
+	private boolean isEmptyAction(ActionItemPropertyBean bean) {
+		return bean.getDelay() == 0 && bean.getRelease() == 0 && bean.getDelayIncrement() == 0
+				&& bean.getReleaseIncrement() == 0;
+	}
 }

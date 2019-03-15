@@ -111,7 +111,7 @@
 }
 
 .text-field:disabled {
-	-fx-opacity: -fx-disabled-opacity;
+	/*-fx-opacity: -fx-disabled-opacity;*/
 	-fx-border-width: 2;
 	-fx-border-width: 0 0 2 0;
 }
@@ -326,6 +326,11 @@
 	-fx-background-color: #5f5c5c;
 }
 
+.blueButton:armed {
+	-fx-background-color: #5f5c5c;
+	-fx-text-fill: #7cd2f3;
+}
+
 .yellowButton {
 	-fx-text-fill: #ffff00;
 }
@@ -335,9 +340,16 @@
 }
 
 .redButton {
-	-fx-text-fill: #ec0000;
+	-fx-text-fill: #d20000;
+}
+.redButton:hover {
+	-fx-background-color: #5f5c5c;
 }
 
+.redButton:armed {
+	-fx-background-color: #5f5c5c;
+	-fx-text-fill: #ff8080;
+}
 .greenButton {
 	-fx-text-fill: #00df00;
 }
