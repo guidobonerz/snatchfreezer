@@ -48,6 +48,13 @@
 			<version>1.18.6</version>
 			<scope>provided</scope>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.nield/dirtyfx -->
+		<dependency>
+			<groupId>org.nield</groupId>
+			<artifactId>dirtyfx</artifactId>
+			<version>0.1.3</version>
+		</dependency>
+
 
 	</dependencies>
 </project>
