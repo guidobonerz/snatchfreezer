@@ -11,10 +11,10 @@ public class Settings {
 	private String description;
 	@Getter
 	@Setter
-	private long cycles;
+	private int cycles;
 	@Getter
 	@Setter
-	private long cycleDelay;
+	private int cycleDelay;
 	@Getter
 	@Setter
 	private List<ActionBean> actionBeanList;

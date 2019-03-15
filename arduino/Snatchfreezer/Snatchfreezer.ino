@@ -33,6 +33,7 @@ uint32_t cycleDelayTime = 0;
 uint32_t targetCycleDelayTime = 0;
 uint32_t inc = 0;
 
+uint32_t runMode = 0;
 
 int phase;
 int serialReadPhase;
@@ -161,74 +162,110 @@ void loop()
       }
     case PHASE_RUN_PROGRAM:
       {
-        if ( millis() >= targetCycleDelayTime)
+        switch ((runMode & 0xff))
         {
-          if (!nextCycle )
-          {
-            SerialHelper::setCycleCount(currentCycleCount + 1);
-            nextCycle = true;
-            currentActionCount = 0;
-            completeCount = 0;
-            clearActions();
-            resetStartTime();
-            digitalWrite(ACTIVE_PIN, HIGH);
-          }
-          else
-          {
-            //-------------------------------------------------------
-            for (int i = 0; i < maxActionCount; i++) {
-
-              if (!actionTimer[i].finished)
+          case SHOT:
+            {
+              if ( millis() >= targetCycleDelayTime)
               {
-                uint32_t ns = micros();
-                uint8_t currentActionTimerCount = actionTimer[i].timerCount;
-                if (!actionTimer[i].started && ns >= actionTimer[i].targetTime)
+                if (!nextCycle )
                 {
-                  actionTimer[i].started = true;
-                  inc = actionTimer[i].releaseCycleIncrement[currentActionTimerCount] * currentCycleCount;
-                  actionTimer[i].targetTime = ns + actionTimer[i].releaseStartTime[currentActionTimerCount] + inc;
-
-                  digitalWrite(actionTimer[i].pin, HIGH);
+                  SerialHelper::setCycleCount(currentCycleCount + 1);
+                  nextCycle = true;
+                  currentActionCount = 0;
+                  completeCount = 0;
+                  clearActions();
+                  resetStartTime();
+                  digitalWrite(ACTIVE_PIN, HIGH);
                 }
-
-                if (actionTimer[i].started && ns >= actionTimer[i].targetTime)
+                else
                 {
-                  digitalWrite(actionTimer[i].pin, LOW);
-                  actionTimer[i].started = false;
-                  inc = actionTimer[i].delayCycleIncrement[currentActionTimerCount] * currentCycleCount;
-                  actionTimer[i].targetTime = ns + actionTimer[i].delayStartTime[currentActionTimerCount] + inc;
-                  if (currentActionTimerCount < actionTimer[i].maxTimerCount - 1)
-                  {
-                    actionTimer[i].timerCount++;
+                  //-------------------------------------------------------
+                  for (int i = 0; i < maxActionCount; i++) {
+
+                    if (!actionTimer[i].finished)
+                    {
+                      uint32_t ns = micros();
+                      uint8_t currentActionTimerCount = actionTimer[i].timerCount;
+                      if (!actionTimer[i].started && ns >= actionTimer[i].targetTime)
+                      {
+                        actionTimer[i].started = true;
+                        inc = actionTimer[i].releaseCycleIncrement[currentActionTimerCount] * currentCycleCount;
+                        actionTimer[i].targetTime = ns + actionTimer[i].releaseStartTime[currentActionTimerCount] + inc;
+
+                        digitalWrite(actionTimer[i].pin, HIGH);
+                      }
+
+                      if (actionTimer[i].started && ns >= actionTimer[i].targetTime)
+                      {
+                        digitalWrite(actionTimer[i].pin, LOW);
+                        actionTimer[i].started = false;
+                        inc = actionTimer[i].delayCycleIncrement[currentActionTimerCount] * currentCycleCount;
+                        actionTimer[i].targetTime = ns + actionTimer[i].delayStartTime[currentActionTimerCount] + inc;
+                        if (currentActionTimerCount < actionTimer[i].maxTimerCount - 1)
+                        {
+                          actionTimer[i].timerCount++;
+                        }
+                        else
+                        {
+                          actionTimer[i].finished = true;
+                          completeCount++;
+                        }
+                      }
+                    }
                   }
-                  else
+
+                  if (completeCount > maxActionCount - 1)
                   {
-                    actionTimer[i].finished = true;
-                    completeCount++;
+                    targetCycleDelayTime = millis() + cycleDelayTime;
+                    nextCycle = false;
+                    completeCount = 0;
+                    currentCycleCount++;
                   }
+                  //-------------------------------------------------------
                 }
               }
-            }
 
-            if (completeCount > maxActionCount - 1)
+              if (currentCycleCount >= maxCycleCount)
+              {
+                currentCycleCount = 0;
+                digitalWrite(ACTIVE_PIN, LOW);
+                SerialHelper::finished();
+                phase = PHASE_READ_SERIAL;
+              }
+              break;
+            }
+          case TEST:
             {
-              targetCycleDelayTime = millis() + cycleDelayTime;
-              nextCycle = false;
-              completeCount = 0;
-              currentCycleCount++;
-            }
-            //-------------------------------------------------------
-          }
-        }
+              uint8_t pin = (runMode >> 8) & 0xff;
+              pinMode(pin, OUTPUT);
+              digitalWrite(pin, HIGH);
+              uint32_t testTime = micros() + 500000;
+              while (micros() < testTime)
+              {
 
-        if (currentCycleCount >= maxCycleCount)
-        {
-          currentCycleCount = 0;
-          digitalWrite(ACTIVE_PIN, LOW);
-          SerialHelper::finished();
-          phase = PHASE_READ_SERIAL;
+              }
+              digitalWrite(pin, LOW);
+              phase = PHASE_READ_SERIAL;
+              break;
+            }
+          case FLUSH_ON:
+            {
+              uint8_t pin = (runMode >> 8) & 0xff;
+              pinMode(pin, OUTPUT);
+              digitalWrite(pin, HIGH);
+              phase = PHASE_READ_SERIAL;
+              break;
+            }
+          case FLUSH_OFF:
+            {
+              uint8_t pin = (runMode >> 8) & 0xff;
+              pinMode(pin, OUTPUT);
+              digitalWrite(pin, LOW);
+              phase = PHASE_READ_SERIAL;
+              break;
+            }
         }
-        break;
       }
   }
 }
@@ -283,6 +320,7 @@ void execute()
       {
         Log::info(MESSAGE_RUN);
         runProgram = true;
+        runMode = value;
         break;
       }
     case COMMAND_RESET:
@@ -424,7 +462,7 @@ void parse(uint8_t data)
         {
           case COMMAND_ADD_ACTION:
           case COMMAND_ADD_ACTION_TIMINGS:
-          case COMMAND_RUN:
+          // case COMMAND_RUN:
           case COMMAND_RESET:
           case COMMAND_CANCEL:
           case COMMAND_FINISHED:

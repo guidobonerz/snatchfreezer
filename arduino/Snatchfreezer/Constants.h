@@ -12,15 +12,13 @@ const int COMMAND_SET_ACTION_DELAY_INCREMENT_TIME   = B11000100;
 const int COMMAND_SET_ACTION_RELEASE_INCREMENT_TIME = B11000101;
 const int COMMAND_SET_CYCLE_COUNT                   = B11000110;
 const int COMMAND_SET_CYCLE_DELAY                   = B11000111;
-const int COMMAND_FLUSH                             = B11001001;
-const int COMMAND_TEST                              = B11001010;
+const int COMMAND_RUN                               = B11001001;
 const int COMMAND_SEND_RESPONSE                     = B11001011;
 const int COMMAND_ADD_ACTION                        = B00000001;
 const int COMMAND_ADD_ACTION_TIMINGS                = B00000010;
 const int COMMAND_NEXT                              = B00000011;
 const int COMMAND_REPEAT                            = B00000100;
 const int COMMAND_SET_LOG_LEVEL                     = B11001011;
-const int COMMAND_RUN                               = B00000110;
 const int COMMAND_CANCEL                            = B00000111;
 const int COMMAND_RESET                             = B00001000;
 const int COMMAND_FINISHED                          = B00001001;
@@ -31,7 +29,10 @@ const int COMMAND_LOG_DEBUG                         = B11001011;
 const int COMMAND_LOG_ERROR                         = B11001100;
 const int COMMAND_LOG_OFF                           = B10001110;
 
-
+const int SHOT = 0;
+const int FLUSH_ON = 1;
+const int FLUSH_OFF = 2;
+const int TEST = 3;
 
 const int MESSAGE_BYTE=1;
 const int MESSAGE_WORD=2;

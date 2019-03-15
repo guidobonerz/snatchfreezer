@@ -1,26 +1,95 @@
 package de.drazil.snatchfreezer;
 
+import static de.drazil.snatchfreezer.Constants.COMMAND_CANCEL;
+import static de.drazil.snatchfreezer.Constants.COMMAND_DUMMY;
+import static de.drazil.snatchfreezer.Constants.COMMAND_ECHO;
+import static de.drazil.snatchfreezer.Constants.COMMAND_FINISHED;
+import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_DEBUG;
+import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_ERROR;
+import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_INFO;
+import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_OFF;
+import static de.drazil.snatchfreezer.Constants.COMMAND_NEXT;
+import static de.drazil.snatchfreezer.Constants.COMMAND_REPEAT;
+import static de.drazil.snatchfreezer.Constants.COMMAND_RESET;
+import static de.drazil.snatchfreezer.Constants.COMMAND_RUN;
+import static de.drazil.snatchfreezer.Constants.COMMAND_SET_CYCLE_COUNT;
+import static de.drazil.snatchfreezer.Constants.DEBUG;
+import static de.drazil.snatchfreezer.Constants.EXECUTE_COMMAND;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_ADD_ACTION;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_ADD_ACTION_TIMIMGS;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_BYTE;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_CANCEL;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_CHECKSUM_ERROR;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_CHECKSUM_OK;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_DWORD;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_ECHO;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_MAX_ACTION_COUNT;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_NO_PARAMETER;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_NUMBER_PARAMETER;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_CHECKSUM;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_COMMAND;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_DATA;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_LENGTH;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_RESET;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_RUN;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_DELAY;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_DELAY_INCREMENT;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_PIN;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_RELEASE;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_RELEASE_INCREMENT;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_CYCLE_COUNT;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_CYCLE_DELAY;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_LOG_LEVEL;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_STRING_PARAMETER;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SYNC1;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_SYNC2;
+import static de.drazil.snatchfreezer.Constants.MESSAGE_WORD;
+import static de.drazil.snatchfreezer.Constants.PARAMETER_NUMBER;
+import static de.drazil.snatchfreezer.Constants.PARAMETER_STRING;
+import static de.drazil.snatchfreezer.Constants.READ_COMMAND;
+import static de.drazil.snatchfreezer.Constants.READ_DATA;
+import static de.drazil.snatchfreezer.Constants.READ_DATA_PREFIX;
+import static de.drazil.snatchfreezer.Constants.READ_LENGTH;
+import static de.drazil.snatchfreezer.Constants.SYNCBYTE1;
+import static de.drazil.snatchfreezer.Constants.SYNCBYTE2;
+import static de.drazil.snatchfreezer.Constants.SHOT;
+import static de.drazil.snatchfreezer.Constants.FLUSH_ON;
+import static de.drazil.snatchfreezer.Constants.FLUSH_OFF;
+import static de.drazil.snatchfreezer.Constants.TEST;
+
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortDataListener;
+import com.fazecast.jSerialComm.SerialPortEvent;
 
 import de.drazil.snatchfreezer.model.ActionBean;
 import de.drazil.snatchfreezer.model.ActionItemBean;
 import de.drazil.snatchfreezer.model.ActionItemPropertyBean;
 import de.drazil.snatchfreezer.model.Settings;
+import de.drazil.util.ArrayUtil;
 import de.drazil.util.EditCell;
 import de.drazil.util.Long2StringConverter;
+import de.drazil.util.NumericConverter;
 import javafx.application.Application;
 import javafx.beans.property.Property;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -51,11 +120,49 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 public class SnatchFreezer extends Application {
 
+	// cccccctt-llllllll-dddddddd...
+	// type = ttt
+	// 00 000000 = no parameter
+	// 10 000000 = string
+	// 11 000000 = number
+	// command = cccccc
+
+	// 11|000001 = set action pin
+	// 11|000010 = set action delay time
+	// 11|000011 = set action release time
+	// 11|000100 = set action delay increment time
+	// 11|000101 = set action release increment time
+	// 11|000110 = set cycle count
+	// 11|000111 = set cycle delay
+	// 11|001001 = flush
+	// 11|001010 = test
+	// 11|001011 = set log level
+	// 00|000001 = add action
+	// 00|000010 = add action timings
+	// 00|000011 = next command
+	// 00|000100 = repeat command
+	// 00|000110 = run
+	// 00|000111 = cancel
+	// 00|001000 = reset
+	// 00|001001 = finished
+	// 00|111111 = dummy
+	// 10|001001 = echo
+	// 11|001010 = log_info
+	// 11|001011 = log_debug
+	// 11|001100 = log_error
+
+	// llllllll = length
+
+	// new protocol frame
+	// SYNC1|SYNC2|COMMAND|PARAMETER_COUNT|PARAMETER_TYPE1|PARAMETER_LENGTH1|VALUE1|..|CHECKSUM
+
 	private GridPane valveBox = null;
 	private GridPane actionBox = null;
+	private Button camera = null;
 
 	private File file = null;
 	private ResourceBundle messages = null;
@@ -63,30 +170,59 @@ public class SnatchFreezer extends Application {
 	private List<ObservableList<ActionItemPropertyBean>> actionList = null;
 	private List<Property<?>> activePropertyList = null;
 	private List<Property<?>> actionDescriptionPropertyList = null;
+	private ConfigurationBuilder cb = null;
+	private ComboBox<Object> serialPortComboBox = null;
+	private Spinner<Integer> cyclesSpinner = null;
+	private Spinner<Integer> cycleDelaySpinner = null;
+	private TextArea console = null;
+	private TextArea description = null;
+
+	private Iterator<byte[]> dataIterator;
+	private byte currentCommandBuffer[];
+	private byte byteBuffer[] = new byte[] {};
+	private byte readDataBuffer[] = null;
+	private int lastAvailableBytes = 0;
+	private int availableBytes = 0;
+	private int dataLength = 0;
+	private int dataIndex;
+	private int currentCommand = 0;
+	private SerialPort serialPort;
+	private SerialPort serialPorts[];
+	private String ttyDevice = null;
+	private String[] portNames;
+	private int phase;
+	private int value;
+	private int syncCount = 0;
+	private int readIndex = 0;
+	private boolean canceled = false;
+
 	/*
 	 * @Override public void start(Stage stage) throws Exception {
 	 * setUserAgentStylesheet(STYLESHEET_MODENA);
 	 * 
 	 * FXMLLoader loader = null; try { loader = new
-	 * FXMLLoader(getClass().getResource("SnatchFreezer.fxml")); } catch (Exception
-	 * e) { // TODO Auto-generated catch block e.printStackTrace(); }
+	 * FXMLLoader(getClass().getResource("SnatchFreezer.fxml")); }
+	 * 
+	 * catch (Exception e) { // TODO Auto-generated catch block e.printStackTrace();
+	 * 
+	 * }
 	 * 
 	 * Parent root = loader.load();
 	 * 
 	 * Scene scene = new Scene(root, 1024, 715);
 	 * scene.getStylesheets().add(getClass().getResource("application.css").
 	 * toExternalForm()); stage.setTitle("SnatchFreezer"); stage.setScene(scene);
-	 * stage.show(); stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-	 * 
-	 * @Override public void handle(WindowEvent event) { System.exit(0); } }); }
+	 * stage.show(); }
 	 */
-
 	public static void main(String[] args) {
 		launch(args);
 	}
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		initialzeSerialPortSelector();
+		initializeSerialConnection();
+		cb = new ConfigurationBuilder();
 		actionList = new ArrayList<ObservableList<ActionItemPropertyBean>>();
 		activePropertyList = new ArrayList<Property<?>>();
 		messages = ResourceBundle.getBundle("de.drazil.snatchfreezer.i18n.message", Locale.ENGLISH);
@@ -151,18 +287,26 @@ public class SnatchFreezer extends Application {
 		actionButtonPane.setPrefHeight(60);
 		actionButtonPane.setMaxHeight(60);
 
-		Button camera = new Button("\uf083");
+		camera = new Button("\uf083");
 		camera.getStyleClass().add("orangeButton");
 		camera.getStyleClass().add("bigButtonIcon");
 		camera.setMinWidth(70);
 		camera.setMaxWidth(70);
 		camera.setPrefWidth(70);
+		camera.setOnAction(value -> {
+			try {
+				run();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
 
 		ProgressIndicator progressIndicator = new ProgressIndicator();
 		progressIndicator.setProgress(-1f);
 
-		TextArea console = new TextArea();
-		TextArea description = new TextArea();
+		console = new TextArea();
+		description = new TextArea();
 
 		VBox control2 = new VBox();
 		GridPane formPane = new GridPane();
@@ -176,15 +320,23 @@ public class SnatchFreezer extends Application {
 		tabPane.getTabs().add(new Tab(messages.getString("tab.console"), console));
 		tabPane.getTabs().add(new Tab(messages.getString("tab.description"), description));
 
+		serialPortComboBox = new ComboBox<Object>();
 		formPane.add(new Label(messages.getString("label.serialPort")), 0, 0);
-		formPane.add(new ComboBox<String>(), 1, 0);
+		formPane.add(serialPortComboBox, 1, 0);
+
+		cyclesSpinner = new Spinner<Integer>(1, 50, 1);
+		cyclesSpinner.setEditable(true);
+
 		formPane.add(new Label(messages.getString("label.cycles")), 0, 1);
-		formPane.add(new Spinner<Long>(), 1, 1);
+		formPane.add(cyclesSpinner, 1, 1);
+
+		cycleDelaySpinner = new Spinner<Integer>(0, 10000, 0, 500);
+		cycleDelaySpinner.setEditable(true);
 		formPane.add(new Label(messages.getString("label.cycleDelay")), 0, 2);
-		formPane.add(new TextField(), 1, 2);
+		formPane.add(cycleDelaySpinner, 1, 2);
 
 		HBox actionBar = new HBox();
-		actionBar.getChildren().addAll(camera, progressIndicator);
+		actionBar.getChildren().addAll(camera);
 		formPane.add(actionBar, 2, 0, 1, 3);
 
 		control2.getChildren().addAll(formPane, tabPane);
@@ -202,11 +354,17 @@ public class SnatchFreezer extends Application {
 		VBox root = new VBox();
 		root.getChildren().addAll(menubar, controlSplitPane);
 
-		Scene scene = new Scene(root, 1280, 768);
+		Scene scene = new Scene(root, 1220, 768);
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 		primaryStage.setTitle("Snatchfreezer");
 		// primaryStage.setMaximized(true);
 		primaryStage.setScene(scene);
+		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+			@Override
+			public void handle(WindowEvent event) {
+				System.exit(0);
+			}
+		});
 		primaryStage.show();
 
 	}
@@ -217,7 +375,7 @@ public class SnatchFreezer extends Application {
 				x = 0;
 				y++;
 			}
-			ScrollPane sp = new ScrollPane(createTable(i + 1, rowCount));
+			ScrollPane sp = new ScrollPane(createTable(i + 1, rowCount, rowCount > 1));
 			sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 			sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 			grid.add(sp, x, y);
@@ -226,7 +384,7 @@ public class SnatchFreezer extends Application {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Node createTable(int id, int rowCount) {
+	private Node createTable(int id, int rowCount, boolean canFlush) {
 
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -314,7 +472,22 @@ public class SnatchFreezer extends Application {
 		idLabel.getStyleClass().add("fatLabel");
 
 		TextField description = new TextField();
-		Button menu = new Button("\uf142");
+		ToggleButton flush = new ToggleButton("\uf576");
+		flush.getStyleClass().add("flushButton");
+		flush.setUserData(id);
+		flush.setOnAction(value -> {
+			ToggleButton b = (ToggleButton) value.getSource();
+			int buttonId = (Integer) b.getUserData();
+			buildFlushConfiguration(buttonId + 1, b.isSelected());
+		});
+		Button bolt = new Button("\uf0e7");
+		bolt.getStyleClass().add("testButton");
+		bolt.setUserData(id);
+		bolt.setOnAction(value -> {
+			Button b = (Button) value.getSource();
+			int buttonId = (Integer) b.getUserData();
+			buildTestConfiguration(buttonId + 1);
+		});
 
 		ToggleButton activeButton = new ToggleButton("\uf205");
 		activeButton.getStyleClass().add("toggleOn");
@@ -323,7 +496,8 @@ public class SnatchFreezer extends Application {
 			table.setDisable(!activeButton.isSelected());
 			idLabel.setDisable(!activeButton.isSelected());
 			description.setDisable(!activeButton.isSelected());
-			menu.setDisable(!activeButton.isSelected());
+			bolt.setDisable(!activeButton.isSelected());
+			flush.setDisable(!activeButton.isSelected());
 			activeButton.getStyleClass().remove("toggleOn");
 			activeButton.getStyleClass().remove("toggleOff");
 			activeButton.getStyleClass().add(activeButton.isSelected() ? "toggleOn" : "toggleOff");
@@ -336,8 +510,12 @@ public class SnatchFreezer extends Application {
 		toolbar.getItems().add(idLabel);
 		toolbar.getItems().add(activeButton);
 		toolbar.getItems().add(description);
+		if (canFlush) {
+			toolbar.getItems().add(flush);
+		}
+
 		toolbar.getItems().add(spacer);
-		toolbar.getItems().add(menu);
+		toolbar.getItems().add(bolt);
 
 		VBox vbox = new VBox();
 		vbox.getChildren().addAll(toolbar, table);
@@ -448,23 +626,23 @@ public class SnatchFreezer extends Application {
 	private Settings getSettings() {
 		if (settings == null) {
 			settings = new Settings();
-
-			List<ActionBean> actionBeanList = new ArrayList<ActionBean>();
-			for (int i = 0; i < actionList.size(); i++) {
-				List<ActionItemPropertyBean> list = actionList.get(i);
-
-				List<ActionItemBean> beanList = new ArrayList<ActionItemBean>();
-				for (int j = 0; j < list.size(); j++) {
-					beanList.add(list.get(j).getBean());
-				}
-				ActionBean actionBean = new ActionBean(i + 1, true, "", beanList);
-				actionBeanList.add(actionBean);
-			}
-			settings.setActionBeanList(actionBeanList);
-			settings.setCycleDelay(1000);
-			settings.setCycles(1);
-			settings.setDescription("lorem ipsum");
 		}
+		List<ActionBean> actionBeanList = new ArrayList<ActionBean>();
+		for (int i = 0; i < actionList.size(); i++) {
+			List<ActionItemPropertyBean> list = actionList.get(i);
+
+			List<ActionItemBean> beanList = new ArrayList<ActionItemBean>();
+			for (int j = 0; j < list.size(); j++) {
+				beanList.add(list.get(j).getBean());
+			}
+			ActionBean actionBean = new ActionBean(i + 1, true, "", beanList);
+			actionBeanList.add(actionBean);
+		}
+		settings.setActionBeanList(actionBeanList);
+		settings.setCycleDelay(cycleDelaySpinner.getValue());
+		settings.setCycles(cyclesSpinner.getValue());
+		settings.setDescription(description.getText());
+
 		return settings;
 	}
 
@@ -472,14 +650,16 @@ public class SnatchFreezer extends Application {
 		this.settings = settings;
 
 		List<ActionBean> actionBeanList = settings.getActionBeanList();
-		
+		description.setText(settings.getDescription());
+		cycleDelaySpinner.getValueFactory().setValue(settings.getCycleDelay());
+		cyclesSpinner.getValueFactory().setValue(settings.getCycles());
 
 		for (int i = 0; i < actionBeanList.size(); i++) {
-			ObservableList<ActionItemPropertyBean> list= actionList.get(i);
+			ObservableList<ActionItemPropertyBean> list = actionList.get(i);
 			list.clear();
 			List<ActionItemBean> actionItemBeanList = actionBeanList.get(i).getActionItemList();
 			for (int j = 0; j < actionItemBeanList.size(); j++) {
-				
+
 				ActionItemBean actionItembean = actionItemBeanList.get(j);
 				list.add(new ActionItemPropertyBean(actionItembean.getId(), actionItembean.getDelay(),
 						actionItembean.getRelease(), actionItembean.getDelayIncrement(),
@@ -510,6 +690,485 @@ public class SnatchFreezer extends Application {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	private boolean buildShotConfiguration() {
+		cb.reset();
+		cb.addSetLogLevel(DEBUG);
+		cb.addReset();
+		int hasActions = 0;
+		for (int i = 0; i < actionList.size(); i++) {
+			ObservableList<ActionItemPropertyBean> list = actionList.get(i);
+			if (!isTableEmpty(list)) {
+				hasActions++;
+				cb.addAction(i + 2);
+				for (int j = 0; j < list.size(); j++) {
+					ActionItemPropertyBean bean = list.get(j);
+					if (!isEmptyOrIgnoredAction(bean)) {
+						cb.addActionTimings(bean.getDelay(), bean.getRelease(), bean.getDelayIncrement(),
+								bean.getReleaseIncrement());
+					}
+				}
+			}
+		}
+		cb.addCycleCount(cyclesSpinner.getValue());
+		cb.addCycleDelay(cycleDelaySpinner.getValue());
+		cb.addRun(SHOT);
+		return hasActions > 0;
+	}
+
+	private void buildTestConfiguration(int pin) {
+		cb.reset();
+		cb.addRun(TEST | (pin << 8));
+		phase = READ_DATA_PREFIX;
+		byteBuffer = new byte[] {};
+		readIndex = 0;
+		canceled = false;
+		try {
+			sendNextCommand();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void buildFlushConfiguration(int pin, boolean active) {
+		cb.reset();
+		cb.addRun((active ? FLUSH_ON : FLUSH_OFF) | (pin << 8));
+		phase = READ_DATA_PREFIX;
+		byteBuffer = new byte[] {};
+		readIndex = 0;
+		canceled = false;
+		try {
+			sendNextCommand();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private boolean isTableEmpty(ObservableList<ActionItemPropertyBean> list) {
+		int x = 0;
+		for (int i = 0; i < list.size(); i++) {
+			x += (isEmptyOrIgnoredAction(list.get(i)) ? 0 : 1);
+		}
+		return x == 0;
+	}
+
+	private boolean isEmptyOrIgnoredAction(ActionItemPropertyBean bean) {
+		return (bean.getDelay() == 0 && bean.getRelease() == 0 && bean.getDelayIncrement() == 0
+				&& bean.getReleaseIncrement() == 0) || bean.getIgnore();
+	}
+
+	private void initialzeSerialPortSelector() {
+		serialPorts = SerialPort.getCommPorts();
+
+		for (int i = 0; i < serialPorts.length; i++) {
+			// TODO
+			// serialSelectChoiceBox.getItems().add(serialPorts[i].getSystemPortName());
+		}
+
+		if (serialPorts.length == 1) {
+			ttyDevice = serialPorts[0].getSystemPortName();
+			// TODO serialSelectChoiceBox.setValue(ttyDevice);
+			serialPort = serialPorts[0];
+			System.out.println(serialPort.getDescriptivePortName());
+		}
+	}
+
+	private void initializeSerialConnection() {
+		serialPort.setBaudRate(57600);
+		serialPort.openPort();
+		serialPort.addDataListener(new SerialPortDataListener() {
+			@Override
+			public int getListeningEvents() {
+				return SerialPort.LISTENING_EVENT_DATA_AVAILABLE;
+			}
+
+			@Override
+			public void serialEvent(SerialPortEvent ev) {
+				if (ev.getEventType() != SerialPort.LISTENING_EVENT_DATA_AVAILABLE)
+					return;
+
+				byteBuffer = buildBuffer(ev.getSerialPort());
+
+				while (readIndex < byteBuffer.length && !canceled) {
+
+					switch (phase) {
+					case READ_DATA_PREFIX: {
+						value = ((int) byteBuffer[readIndex++] & 0xff);
+						switch (value) {
+						case SYNCBYTE1: {
+							++syncCount;
+							break;
+						}
+						case SYNCBYTE2: {
+							++syncCount;
+							if (syncCount == 2) {
+								syncCount = 0;
+								phase = READ_COMMAND;
+							}
+							break;
+						}
+						}
+						break;
+					}
+					case READ_COMMAND: {
+						value = ((int) byteBuffer[readIndex++] & 0xff);
+						currentCommand = 0;
+						switch (value) {
+						case COMMAND_SET_CYCLE_COUNT:
+						case COMMAND_ECHO:
+						case COMMAND_LOG_DEBUG:
+						case COMMAND_LOG_INFO:
+						case COMMAND_LOG_ERROR: {
+							phase = READ_LENGTH;
+							break;
+						}
+						case COMMAND_RUN:
+						case COMMAND_RESET:
+						case COMMAND_NEXT:
+						case COMMAND_REPEAT:
+						case COMMAND_CANCEL:
+						case COMMAND_FINISHED:
+						case COMMAND_DUMMY: {
+							phase = EXECUTE_COMMAND;
+							break;
+						}
+						}
+						currentCommand = value;
+						break;
+					}
+					case READ_LENGTH: {
+						value = ((int) byteBuffer[readIndex++] & 0xff);
+						dataIndex = 0;
+						dataLength = value;
+						readDataBuffer = new byte[dataLength];
+						phase = READ_DATA;
+						break;
+					}
+					case READ_DATA: {
+						if (readIndex + dataLength > byteBuffer.length)
+							return;
+
+						while (dataIndex < dataLength && readIndex < byteBuffer.length) {
+							value = ((int) byteBuffer[readIndex++] & 0xff);
+							readDataBuffer[dataIndex++] = (byte) value;
+						}
+						phase = EXECUTE_COMMAND;
+					}
+					case EXECUTE_COMMAND: {
+						String s = "";
+						long value = 0;
+						if ((currentCommand & PARAMETER_NUMBER) == PARAMETER_NUMBER) {
+							switch (dataLength) {
+							case 1: {
+								value = NumericConverter.toByte(readDataBuffer);
+								break;
+							}
+							case 2: {
+								value = NumericConverter.toInt(readDataBuffer);
+								break;
+							}
+							case 4: {
+								value = NumericConverter.toLong(readDataBuffer);
+								break;
+							}
+							}
+
+						} else if ((currentCommand & PARAMETER_STRING) == PARAMETER_STRING) {
+							s = new String(readDataBuffer, 0, dataLength);
+						} else {
+						}
+						phase = READ_DATA_PREFIX;
+						switch (currentCommand) {
+						case COMMAND_SET_CYCLE_COUNT: {
+							System.out.println("count:" + value);
+							buildBuffer(ev.getSerialPort());
+							// TODO cycleIndicator.setProgress((double) value / maxCycles.getValue());
+							break;
+						}
+						case COMMAND_LOG_DEBUG: {
+							debug((int) value);
+							break;
+						}
+						case COMMAND_LOG_ERROR: {
+							error((int) value);
+							break;
+						}
+						case COMMAND_LOG_INFO: {
+							info((int) value);
+							break;
+						}
+						case COMMAND_LOG_OFF: {
+							break;
+						}
+						case COMMAND_ECHO: {
+							echo(s);
+							break;
+						}
+						case COMMAND_RESET: {
+							// debug(s);
+							break;
+						}
+						case COMMAND_DUMMY: {
+							// System.out.println("dummy");
+							break;
+						}
+						case COMMAND_FINISHED: {
+
+							final ScheduledExecutorService executorService = Executors
+									.newSingleThreadScheduledExecutor();
+							executorService.schedule(new Runnable() {
+								@Override
+								public void run() {
+									camera.setDisable(false);
+									// TODO
+									// transmissionIndicator.setProgress(0f);
+									// cycleIndicator.setProgress(0f);
+									// actionButton.setStyle("-fx-base: #00ff00;");
+									System.out.println("Finished");
+								}
+							}, 500, TimeUnit.MILLISECONDS);
+							break;
+						}
+						case COMMAND_CANCEL: {
+							System.out.println("Cancel");
+							canceled = true;
+							break;
+						}
+						case COMMAND_NEXT: {
+							if (!canceled) {
+								System.out.println("Next Serial Command");
+								try {
+									System.out.println("------------------------------------------------");
+									sendNextCommand();
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+							}
+							break;
+						}
+						case COMMAND_REPEAT: {
+							if (!canceled) {
+								System.out.println("Repeat Serial Command");
+								try {
+									sendRepeatCommand();
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+							}
+							break;
+						}
+						}
+						break;
+					}
+					}
+				}
+			}
+		});
+	}
+
+	private void run() throws Exception {
+
+		// actionButton.setStyle("-fx-base: #ff0000;");
+		// cycleIndicator.setProgress(0f);
+
+		if (buildShotConfiguration()) {
+			camera.setDisable(true);
+			phase = READ_DATA_PREFIX;
+			byteBuffer = new byte[] {};
+			readIndex = 0;
+			canceled = false;
+			sendNextCommand();
+		} else {
+			Alert alert = new Alert(AlertType.WARNING);
+			alert.setTitle(messages.getString("message.warning"));
+			alert.setHeaderText(null);
+			alert.setContentText(messages.getString("message.no_actions"));
+			alert.showAndWait();
+		}
+	}
+
+	private boolean sendNextCommand() throws Exception {
+		if (dataIterator == null) {
+			dataIterator = cb.getIterator();
+		}
+		boolean hasNext = dataIterator.hasNext();
+		if (hasNext) {
+			System.out.println("Send Command");
+			currentCommandBuffer = dataIterator.next();
+			int index = cb.indexOfCommand(currentCommandBuffer);
+
+			double d = (double) index / cb.getCommandListSize();
+
+			// TODO transmissionIndicator.setProgress(d);
+
+			serialPort.writeBytes(currentCommandBuffer, currentCommandBuffer.length);
+			serialPort.getOutputStream().flush();
+		} else {
+			System.out.println("No More Commands");
+			dataIterator = null;
+			// TODO transmissionIndicator.setProgress(1f);
+		}
+		return hasNext;
+	}
+
+	private void sendRepeatCommand() throws Exception {
+		System.out.println("resend Command");
+		serialPort.writeBytes(currentCommandBuffer, currentCommandBuffer.length);
+		serialPort.getOutputStream().flush();
+
+	}
+
+	private void echo(String text) {
+		System.out.println("ECHO: " + text);
+	}
+
+	private void debug(int id) {
+		System.out.println("DEBUG: " + getMessage(id));
+	}
+
+	private void info(int id) {
+		System.out.println("INFO: " + getMessage(id));
+	}
+
+	private void error(int id) {
+		System.out.println("INFO: " + getMessage(id));
+	}
+
+	private String getMessage(int id) {
+		String s = "";
+		switch (id) {
+		case MESSAGE_BYTE: {
+			s = "Byte";
+			break;
+		}
+		case MESSAGE_WORD: {
+			s = "Word";
+			break;
+		}
+		case MESSAGE_DWORD: {
+			s = "DWord";
+			break;
+		}
+		case MESSAGE_STRING_PARAMETER: {
+			s = "String Parameter";
+			break;
+		}
+		case MESSAGE_NUMBER_PARAMETER: {
+			s = "Numeric Parameter";
+			break;
+		}
+		case MESSAGE_NO_PARAMETER: {
+			s = "No Parameter";
+			break;
+		}
+		case MESSAGE_RUN: {
+			s = "Run";
+			break;
+		}
+		case MESSAGE_RESET: {
+			s = "Reset";
+			break;
+		}
+		case MESSAGE_CANCEL: {
+			s = "Cancel";
+			break;
+		}
+		case MESSAGE_ECHO: {
+			s = "Echo";
+			break;
+		}
+		case MESSAGE_SET_LOG_LEVEL: {
+			s = "Set Log Level";
+			break;
+		}
+		case MESSAGE_ADD_ACTION: {
+			s = "Add Action";
+			break;
+		}
+		case MESSAGE_SET_ACTION_PIN: {
+			s = "Set Action Pin";
+			break;
+		}
+		case MESSAGE_ADD_ACTION_TIMIMGS: {
+			s = "Add Action Timings";
+			break;
+		}
+		case MESSAGE_SET_ACTION_DELAY: {
+			s = "Set Action Delay";
+			break;
+		}
+		case MESSAGE_SET_ACTION_DELAY_INCREMENT: {
+			s = "Set Action Delay Increment";
+			break;
+		}
+		case MESSAGE_SET_ACTION_RELEASE: {
+			s = "Set Action Release";
+			break;
+		}
+		case MESSAGE_SET_ACTION_RELEASE_INCREMENT: {
+			s = "Set Action Release Increment";
+			break;
+		}
+		case MESSAGE_SET_CYCLE_COUNT: {
+			s = "Set Cycle Count";
+			break;
+		}
+		case MESSAGE_SET_CYCLE_DELAY: {
+			s = "Set Cycle Delay";
+			break;
+		}
+		case MESSAGE_SYNC1: {
+			s = "Sync1";
+			break;
+		}
+		case MESSAGE_SYNC2: {
+			s = "Sync2";
+			break;
+		}
+		case MESSAGE_READ_COMMAND: {
+			s = "Read Command";
+			break;
+		}
+		case MESSAGE_READ_LENGTH: {
+			s = "Read Length";
+			break;
+		}
+		case MESSAGE_READ_DATA: {
+			s = "Read Data";
+			break;
+		}
+		case MESSAGE_READ_CHECKSUM: {
+			s = "Read Checksum";
+			break;
+		}
+		case MESSAGE_CHECKSUM_ERROR: {
+			s = "Checksum Error";
+			break;
+		}
+		case MESSAGE_CHECKSUM_OK: {
+			s = "Checksum OK";
+			break;
+		}
+		case MESSAGE_MAX_ACTION_COUNT: {
+			s = "Max Action Count";
+			break;
+		}
+		}
+		return s;
+	}
+
+	private byte[] buildBuffer(SerialPort serialPort) {
+		lastAvailableBytes = availableBytes;
+		availableBytes = serialPort.bytesAvailable();
+		if (lastAvailableBytes != availableBytes) {
+			byte newBytes[] = new byte[availableBytes];
+			serialPort.readBytes(newBytes, availableBytes);
+			byteBuffer = ArrayUtil.add(byteBuffer, newBytes);
+		}
+		return byteBuffer;
 	}
 
 }
