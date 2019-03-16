@@ -8,6 +8,9 @@ This project also contains all required software and PCB layouts including:
 - Arduino Sketch
 - Eagle PCB
 
+Future plans:
+- WLAN Module
+- Android Client
 
 
 ## Controller View
