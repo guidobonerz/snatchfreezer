@@ -1,26 +1,23 @@
-package de.drazil.snatchfreezer;
+package de.drazil.util;
 
-import static de.drazil.snatchfreezer.Constants.COMMAND_ADD_ACTION;
-import static de.drazil.snatchfreezer.Constants.COMMAND_ADD_ACTION_TIMINGS;
-import static de.drazil.snatchfreezer.Constants.COMMAND_CANCEL;
-import static de.drazil.snatchfreezer.Constants.COMMAND_ECHO;
-import static de.drazil.snatchfreezer.Constants.COMMAND_RESET;
-import static de.drazil.snatchfreezer.Constants.COMMAND_RUN;
-import static de.drazil.snatchfreezer.Constants.COMMAND_SET_ACTION_DELAY_INCREMENT_TIME;
-import static de.drazil.snatchfreezer.Constants.COMMAND_SET_ACTION_DELAY_TIME;
-import static de.drazil.snatchfreezer.Constants.COMMAND_SET_ACTION_PIN;
-import static de.drazil.snatchfreezer.Constants.COMMAND_SET_ACTION_RELEASE_INCREMENT_TIME;
-import static de.drazil.snatchfreezer.Constants.COMMAND_SET_ACTION_RELEASE_TIME;
-import static de.drazil.snatchfreezer.Constants.COMMAND_SET_CYCLE_COUNT;
-import static de.drazil.snatchfreezer.Constants.COMMAND_SET_CYCLE_DELAY;
-import static de.drazil.snatchfreezer.Constants.COMMAND_SET_LOG_LEVEL;
+import static de.drazil.util.Constants.COMMAND_ADD_ACTION;
+import static de.drazil.util.Constants.COMMAND_ADD_ACTION_TIMINGS;
+import static de.drazil.util.Constants.COMMAND_CANCEL;
+import static de.drazil.util.Constants.COMMAND_ECHO;
+import static de.drazil.util.Constants.COMMAND_RESET;
+import static de.drazil.util.Constants.COMMAND_RUN;
+import static de.drazil.util.Constants.COMMAND_SET_ACTION_DELAY_INCREMENT_TIME;
+import static de.drazil.util.Constants.COMMAND_SET_ACTION_DELAY_TIME;
+import static de.drazil.util.Constants.COMMAND_SET_ACTION_PIN;
+import static de.drazil.util.Constants.COMMAND_SET_ACTION_RELEASE_INCREMENT_TIME;
+import static de.drazil.util.Constants.COMMAND_SET_ACTION_RELEASE_TIME;
+import static de.drazil.util.Constants.COMMAND_SET_CYCLE_COUNT;
+import static de.drazil.util.Constants.COMMAND_SET_CYCLE_DELAY;
+import static de.drazil.util.Constants.COMMAND_SET_LOG_LEVEL;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import de.drazil.util.ArrayUtil;
-import de.drazil.util.NumericConverter;
 
 public class ConfigurationBuilder {
 	private List<byte[]> commandList = null;

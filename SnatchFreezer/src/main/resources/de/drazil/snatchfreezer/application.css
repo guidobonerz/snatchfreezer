@@ -289,6 +289,10 @@
 	-fx-text-fill: white;
 }
 
+.spinner>.text-field {
+	-fx-alignment: CENTER-RIGHT;
+}
+
 .button {
 	-fx-font-family: "Font Awesome 5 Free Solid";
 	-fx-font-size: 20px;
@@ -325,7 +329,7 @@
 	-fx-border-width: 0;
 	-fx-border-radius: 0;
 	-fx-background-color: -fx-background;
-	-fx-padding:5px;
+	-fx-padding: 5px;
 }
 
 .flushButton:hover {
@@ -357,8 +361,7 @@
 	-fx-border-width: 0;
 	-fx-border-radius: 0;
 	-fx-background-color: -fx-background;
-	-fx-padding:5px;
-	
+	-fx-padding: 5px;
 }
 
 .testButton:hover {

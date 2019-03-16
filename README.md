@@ -9,7 +9,8 @@ This project also contains all required software and PCB layouts including:
 - Eagle PCB
 
 Future plans:
-- WLAN Module
+- WLAN and/or Bluetooth Module
+- Rest Api
 - Android Client
 
 
