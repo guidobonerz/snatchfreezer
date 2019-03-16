@@ -12,3 +12,6 @@ This project also contains all required software and PCB layouts including:
 
 ## Controller View
 ![screenshot1](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/ControllerView.png)
+
+## PCB
+![screenshot1](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/pcb.jpg)
