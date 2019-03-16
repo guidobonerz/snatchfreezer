@@ -15,6 +15,8 @@ import static de.drazil.snatchfreezer.Constants.COMMAND_RUN;
 import static de.drazil.snatchfreezer.Constants.COMMAND_SET_CYCLE_COUNT;
 import static de.drazil.snatchfreezer.Constants.DEBUG;
 import static de.drazil.snatchfreezer.Constants.EXECUTE_COMMAND;
+import static de.drazil.snatchfreezer.Constants.FLUSH_OFF;
+import static de.drazil.snatchfreezer.Constants.FLUSH_ON;
 import static de.drazil.snatchfreezer.Constants.MESSAGE_ADD_ACTION;
 import static de.drazil.snatchfreezer.Constants.MESSAGE_ADD_ACTION_TIMIMGS;
 import static de.drazil.snatchfreezer.Constants.MESSAGE_BYTE;
@@ -50,11 +52,9 @@ import static de.drazil.snatchfreezer.Constants.READ_COMMAND;
 import static de.drazil.snatchfreezer.Constants.READ_DATA;
 import static de.drazil.snatchfreezer.Constants.READ_DATA_PREFIX;
 import static de.drazil.snatchfreezer.Constants.READ_LENGTH;
+import static de.drazil.snatchfreezer.Constants.SHOT;
 import static de.drazil.snatchfreezer.Constants.SYNCBYTE1;
 import static de.drazil.snatchfreezer.Constants.SYNCBYTE2;
-import static de.drazil.snatchfreezer.Constants.SHOT;
-import static de.drazil.snatchfreezer.Constants.FLUSH_ON;
-import static de.drazil.snatchfreezer.Constants.FLUSH_OFF;
 import static de.drazil.snatchfreezer.Constants.TEST;
 
 import java.io.File;
@@ -196,24 +196,6 @@ public class SnatchFreezer extends Application {
 	private int readIndex = 0;
 	private boolean canceled = false;
 
-	/*
-	 * @Override public void start(Stage stage) throws Exception {
-	 * setUserAgentStylesheet(STYLESHEET_MODENA);
-	 * 
-	 * FXMLLoader loader = null; try { loader = new
-	 * FXMLLoader(getClass().getResource("SnatchFreezer.fxml")); }
-	 * 
-	 * catch (Exception e) { // TODO Auto-generated catch block e.printStackTrace();
-	 * 
-	 * }
-	 * 
-	 * Parent root = loader.load();
-	 * 
-	 * Scene scene = new Scene(root, 1024, 715);
-	 * scene.getStylesheets().add(getClass().getResource("application.css").
-	 * toExternalForm()); stage.setTitle("SnatchFreezer"); stage.setScene(scene);
-	 * stage.show(); }
-	 */
 	public static void main(String[] args) {
 		launch(args);
 	}
