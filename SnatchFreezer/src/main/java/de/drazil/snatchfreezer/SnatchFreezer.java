@@ -1,61 +1,61 @@
 package de.drazil.snatchfreezer;
 
-import static de.drazil.snatchfreezer.Constants.COMMAND_CANCEL;
-import static de.drazil.snatchfreezer.Constants.COMMAND_DUMMY;
-import static de.drazil.snatchfreezer.Constants.COMMAND_ECHO;
-import static de.drazil.snatchfreezer.Constants.COMMAND_FINISHED;
-import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_DEBUG;
-import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_ERROR;
-import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_INFO;
-import static de.drazil.snatchfreezer.Constants.COMMAND_LOG_OFF;
-import static de.drazil.snatchfreezer.Constants.COMMAND_NEXT;
-import static de.drazil.snatchfreezer.Constants.COMMAND_REPEAT;
-import static de.drazil.snatchfreezer.Constants.COMMAND_RESET;
-import static de.drazil.snatchfreezer.Constants.COMMAND_RUN;
-import static de.drazil.snatchfreezer.Constants.COMMAND_SET_CYCLE_COUNT;
-import static de.drazil.snatchfreezer.Constants.DEBUG;
-import static de.drazil.snatchfreezer.Constants.EXECUTE_COMMAND;
-import static de.drazil.snatchfreezer.Constants.FLUSH_OFF;
-import static de.drazil.snatchfreezer.Constants.FLUSH_ON;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_ADD_ACTION;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_ADD_ACTION_TIMIMGS;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_BYTE;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_CANCEL;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_CHECKSUM_ERROR;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_CHECKSUM_OK;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_DWORD;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_ECHO;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_MAX_ACTION_COUNT;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_NO_PARAMETER;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_NUMBER_PARAMETER;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_CHECKSUM;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_COMMAND;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_DATA;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_READ_LENGTH;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_RESET;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_RUN;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_DELAY;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_DELAY_INCREMENT;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_PIN;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_RELEASE;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_ACTION_RELEASE_INCREMENT;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_CYCLE_COUNT;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_CYCLE_DELAY;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_SET_LOG_LEVEL;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_STRING_PARAMETER;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_SYNC1;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_SYNC2;
-import static de.drazil.snatchfreezer.Constants.MESSAGE_WORD;
-import static de.drazil.snatchfreezer.Constants.PARAMETER_NUMBER;
-import static de.drazil.snatchfreezer.Constants.PARAMETER_STRING;
-import static de.drazil.snatchfreezer.Constants.READ_COMMAND;
-import static de.drazil.snatchfreezer.Constants.READ_DATA;
-import static de.drazil.snatchfreezer.Constants.READ_DATA_PREFIX;
-import static de.drazil.snatchfreezer.Constants.READ_LENGTH;
-import static de.drazil.snatchfreezer.Constants.SHOT;
-import static de.drazil.snatchfreezer.Constants.SYNCBYTE1;
-import static de.drazil.snatchfreezer.Constants.SYNCBYTE2;
-import static de.drazil.snatchfreezer.Constants.TEST;
+import static de.drazil.util.Constants.COMMAND_CANCEL;
+import static de.drazil.util.Constants.COMMAND_DUMMY;
+import static de.drazil.util.Constants.COMMAND_ECHO;
+import static de.drazil.util.Constants.COMMAND_FINISHED;
+import static de.drazil.util.Constants.COMMAND_LOG_DEBUG;
+import static de.drazil.util.Constants.COMMAND_LOG_ERROR;
+import static de.drazil.util.Constants.COMMAND_LOG_INFO;
+import static de.drazil.util.Constants.COMMAND_LOG_OFF;
+import static de.drazil.util.Constants.COMMAND_NEXT;
+import static de.drazil.util.Constants.COMMAND_REPEAT;
+import static de.drazil.util.Constants.COMMAND_RESET;
+import static de.drazil.util.Constants.COMMAND_RUN;
+import static de.drazil.util.Constants.COMMAND_SET_CYCLE_COUNT;
+import static de.drazil.util.Constants.DEBUG;
+import static de.drazil.util.Constants.EXECUTE_COMMAND;
+import static de.drazil.util.Constants.FLUSH_OFF;
+import static de.drazil.util.Constants.FLUSH_ON;
+import static de.drazil.util.Constants.MESSAGE_ADD_ACTION;
+import static de.drazil.util.Constants.MESSAGE_ADD_ACTION_TIMIMGS;
+import static de.drazil.util.Constants.MESSAGE_BYTE;
+import static de.drazil.util.Constants.MESSAGE_CANCEL;
+import static de.drazil.util.Constants.MESSAGE_CHECKSUM_ERROR;
+import static de.drazil.util.Constants.MESSAGE_CHECKSUM_OK;
+import static de.drazil.util.Constants.MESSAGE_DWORD;
+import static de.drazil.util.Constants.MESSAGE_ECHO;
+import static de.drazil.util.Constants.MESSAGE_MAX_ACTION_COUNT;
+import static de.drazil.util.Constants.MESSAGE_NO_PARAMETER;
+import static de.drazil.util.Constants.MESSAGE_NUMBER_PARAMETER;
+import static de.drazil.util.Constants.MESSAGE_READ_CHECKSUM;
+import static de.drazil.util.Constants.MESSAGE_READ_COMMAND;
+import static de.drazil.util.Constants.MESSAGE_READ_DATA;
+import static de.drazil.util.Constants.MESSAGE_READ_LENGTH;
+import static de.drazil.util.Constants.MESSAGE_RESET;
+import static de.drazil.util.Constants.MESSAGE_RUN;
+import static de.drazil.util.Constants.MESSAGE_SET_ACTION_DELAY;
+import static de.drazil.util.Constants.MESSAGE_SET_ACTION_DELAY_INCREMENT;
+import static de.drazil.util.Constants.MESSAGE_SET_ACTION_PIN;
+import static de.drazil.util.Constants.MESSAGE_SET_ACTION_RELEASE;
+import static de.drazil.util.Constants.MESSAGE_SET_ACTION_RELEASE_INCREMENT;
+import static de.drazil.util.Constants.MESSAGE_SET_CYCLE_COUNT;
+import static de.drazil.util.Constants.MESSAGE_SET_CYCLE_DELAY;
+import static de.drazil.util.Constants.MESSAGE_SET_LOG_LEVEL;
+import static de.drazil.util.Constants.MESSAGE_STRING_PARAMETER;
+import static de.drazil.util.Constants.MESSAGE_SYNC1;
+import static de.drazil.util.Constants.MESSAGE_SYNC2;
+import static de.drazil.util.Constants.MESSAGE_WORD;
+import static de.drazil.util.Constants.PARAMETER_NUMBER;
+import static de.drazil.util.Constants.PARAMETER_STRING;
+import static de.drazil.util.Constants.READ_COMMAND;
+import static de.drazil.util.Constants.READ_DATA;
+import static de.drazil.util.Constants.READ_DATA_PREFIX;
+import static de.drazil.util.Constants.READ_LENGTH;
+import static de.drazil.util.Constants.SHOT;
+import static de.drazil.util.Constants.SYNCBYTE1;
+import static de.drazil.util.Constants.SYNCBYTE2;
+import static de.drazil.util.Constants.TEST;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -78,19 +78,21 @@ import de.drazil.snatchfreezer.model.ActionItemBean;
 import de.drazil.snatchfreezer.model.ActionItemPropertyBean;
 import de.drazil.snatchfreezer.model.Settings;
 import de.drazil.util.ArrayUtil;
+import de.drazil.util.ConfigurationBuilder;
 import de.drazil.util.EditCell;
 import de.drazil.util.Long2StringConverter;
 import de.drazil.util.NumericConverter;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
@@ -171,11 +173,14 @@ public class SnatchFreezer extends Application {
 	private List<Property<?>> activePropertyList = null;
 	private List<Property<?>> actionDescriptionPropertyList = null;
 	private ConfigurationBuilder cb = null;
-	private ComboBox<Object> serialPortComboBox = null;
+	private ComboBox<String> serialPortComboBox = null;
 	private Spinner<Integer> cyclesSpinner = null;
 	private Spinner<Integer> cycleDelaySpinner = null;
 	private TextArea console = null;
 	private TextArea description = null;
+	private Label connectedButton = null;
+	private ProgressIndicator transferIndicator = null;
+	private ProgressIndicator progressIndicator = null;
 
 	private Iterator<byte[]> dataIterator;
 	private byte currentCommandBuffer[];
@@ -219,14 +224,16 @@ public class SnatchFreezer extends Application {
 		pinOutMappingCameraFlash.add(new Integer(10));
 		pinOutMappingCameraFlash.add(new Integer(11));
 
-		initialzeSerialPortSelector();
-		initializeSerialConnection();
 		cb = new ConfigurationBuilder();
 		actionList = new ArrayList<ObservableList<ActionItemPropertyBean>>();
 		activePropertyList = new ArrayList<Property<?>>();
 		messages = ResourceBundle.getBundle("de.drazil.snatchfreezer.i18n.message", Locale.ENGLISH);
 
 		Font.loadFont(getClass().getResource("fa-solid-900.ttf").toExternalForm(), 10);
+
+		Region spacer = new Region();
+		HBox.setHgrow(spacer, Priority.ALWAYS);
+		spacer.setMinWidth(Region.USE_COMPUTED_SIZE);
 
 		Menu applicationMenu = new Menu(messages.getString("menu.application"));
 		MenuItem newProject = new MenuItem(messages.getString("menu.application.new"));
@@ -259,6 +266,17 @@ public class SnatchFreezer extends Application {
 
 		applicationMenu.getItems().addAll(newProject, loadProject, saveProject, saveAsProject, new SeparatorMenuItem(),
 				quitApplciation);
+
+		Menu controlMenu = new Menu(messages.getString("menu.control"));
+		CheckMenuItem flushAll = new CheckMenuItem(messages.getString("menu.control.flushAll"));
+		MenuItem testAll = new MenuItem(messages.getString("menu.control.testAll"));
+		controlMenu.getItems().addAll(flushAll, testAll);
+
+		Menu presetMenu = new Menu(messages.getString("menu.preset"));
+		MenuItem presetCROWN = new MenuItem(messages.getString("menu.preset.crown"));
+		MenuItem presetTAT = new MenuItem(messages.getString("menu.preset.tat"));
+		presetMenu.getItems().addAll(presetCROWN, presetTAT);
+
 		Menu helpMenu = new Menu(messages.getString("menu.help"));
 		MenuItem help = new MenuItem(messages.getString("menu.help.help"));
 		MenuItem checkUpdates = new MenuItem(messages.getString("menu.help.updates"));
@@ -267,6 +285,8 @@ public class SnatchFreezer extends Application {
 
 		MenuBar menubar = new MenuBar();
 		menubar.getMenus().add(applicationMenu);
+		menubar.getMenus().add(controlMenu);
+		menubar.getMenus().add(presetMenu);
 		menubar.getMenus().add(helpMenu);
 		valveBox = new GridPane();
 		TitledPane valvePane = new TitledPane(messages.getString("pane.devices"), valveBox);
@@ -280,11 +300,6 @@ public class SnatchFreezer extends Application {
 		cameraFlashPane.getStyleClass().add("titledActionPane");
 		cameraFlashPane.setCollapsible(false);
 		createTableSet(actionBox, 4, 1, pinOutMappingCameraFlash);
-
-		HBox actionButtonPane = new HBox();
-		actionButtonPane.setMinHeight(60);
-		actionButtonPane.setPrefHeight(60);
-		actionButtonPane.setMaxHeight(60);
 
 		camera = new Button("\uf083");
 		camera.getStyleClass().add("orangeButton");
@@ -301,14 +316,26 @@ public class SnatchFreezer extends Application {
 			}
 		});
 
-		ProgressIndicator progressIndicator = new ProgressIndicator();
-		progressIndicator.setProgress(-1f);
+		transferIndicator = new ProgressIndicator(0);
+		transferIndicator.setProgress(20);
+		transferIndicator.setPrefHeight(60);
+		transferIndicator.setPrefWidth(60);
+		transferIndicator.setPadding(new Insets(10, 0, 0, 0));
+
+		progressIndicator = new ProgressIndicator(0);
+		progressIndicator.setProgress(20);
+		progressIndicator.setPrefHeight(60);
+		progressIndicator.setPrefWidth(60);
+		progressIndicator.setPadding(new Insets(10, 0, 0, 0));
 
 		console = new TextArea();
 		description = new TextArea();
 
 		VBox control2 = new VBox();
 		GridPane formPane = new GridPane();
+		formPane.setMinWidth(300);
+		formPane.setPrefWidth(300);
+		formPane.setMaxWidth(300);
 		TitledPane controlPane = new TitledPane(messages.getString("pane.control"), control2);
 
 		controlPane.getStyleClass().add("titledControlPane");
@@ -319,32 +346,38 @@ public class SnatchFreezer extends Application {
 		tabPane.getTabs().add(new Tab(messages.getString("tab.console"), console));
 		tabPane.getTabs().add(new Tab(messages.getString("tab.description"), description));
 
-		serialPortComboBox = new ComboBox<Object>();
+		serialPortComboBox = new ComboBox<String>();
 		formPane.add(new Label(messages.getString("label.serialPort")), 0, 0);
 		formPane.add(serialPortComboBox, 1, 0);
+
+		connectedButton = new Label("\uf119");
+		connectedButton.getStyleClass().add("imageLabel");
+		connectedButton.getStyleClass().add("darkRedButton");
+		formPane.add(connectedButton, 2, 0);
 
 		cyclesSpinner = new Spinner<Integer>(1, 50, 1);
 		cyclesSpinner.setEditable(true);
 
 		formPane.add(new Label(messages.getString("label.cycles")), 0, 1);
-		formPane.add(cyclesSpinner, 1, 1);
+		formPane.add(cyclesSpinner, 1, 1, 2, 1);
 
 		cycleDelaySpinner = new Spinner<Integer>(0, 10000, 0, 500);
 		cycleDelaySpinner.setEditable(true);
 		formPane.add(new Label(messages.getString("label.cycleDelay")), 0, 2);
-		formPane.add(cycleDelaySpinner, 1, 2);
+		formPane.add(cycleDelaySpinner, 1, 2, 2, 1);
 
-		HBox actionBar = new HBox();
-		actionBar.getChildren().addAll(camera);
-		formPane.add(actionBar, 2, 0, 1, 3);
+		ToolBar actionBar = new ToolBar();
+		actionBar.getItems().addAll(spacer, camera, transferIndicator, progressIndicator);
 
-		control2.getChildren().addAll(formPane, tabPane);
+		HBox controlBar = new HBox();
+		controlBar.getChildren().addAll(formPane, actionBar);
+
+		control2.getChildren().addAll(controlBar, tabPane);
 		tabPane.setMinHeight(250);
 
 		VBox rightPane = new VBox();
 
 		rightPane.getChildren().addAll(cameraFlashPane, controlPane);
-
 		rightPane.prefHeightProperty().bind(valvePane.heightProperty());
 
 		HBox controlSplitPane = new HBox();
@@ -364,8 +397,16 @@ public class SnatchFreezer extends Application {
 				System.exit(0);
 			}
 		});
+
 		primaryStage.show();
 
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				initialzeSerialPortSelector();
+				initializeSerialConnection();
+			}
+		});
 	}
 
 	private void createTableSet(GridPane grid, int tableCount, int rowCount, List<Integer> pinOutMapping) {
@@ -467,7 +508,7 @@ public class SnatchFreezer extends Application {
 		setDelayIncrementColumnFactory(table, delayIncrementColumn);
 		setReleaseIncrementColumnFactory(table, releaseIncrementColumn);
 
-		Label idLabel = new Label(Integer.toString(id+1));
+		Label idLabel = new Label(Integer.toString(id + 1));
 		idLabel.getStyleClass().add("fatLabel");
 
 		TextField description = new TextField();
@@ -763,21 +804,23 @@ public class SnatchFreezer extends Application {
 		serialPorts = SerialPort.getCommPorts();
 
 		for (int i = 0; i < serialPorts.length; i++) {
-			// TODO
-			// serialSelectChoiceBox.getItems().add(serialPorts[i].getSystemPortName());
+			serialPortComboBox.getItems().add(serialPorts[i].getSystemPortName());
 		}
 
 		if (serialPorts.length == 1) {
 			ttyDevice = serialPorts[0].getSystemPortName();
-			// TODO serialSelectChoiceBox.setValue(ttyDevice);
+			serialPortComboBox.setValue(ttyDevice);
 			serialPort = serialPorts[0];
-			System.out.println(serialPort.getDescriptivePortName());
 		}
 	}
 
 	private void initializeSerialConnection() {
 		serialPort.setBaudRate(57600);
-		serialPort.openPort();
+		if (serialPort.openPort()) {
+			connectedButton.getStyleClass().add("darkGreenButton");
+			connectedButton.setText("\uf118");
+		}
+
 		serialPort.addDataListener(new SerialPortDataListener() {
 			@Override
 			public int getListeningEvents() {
@@ -786,6 +829,7 @@ public class SnatchFreezer extends Application {
 
 			@Override
 			public void serialEvent(SerialPortEvent ev) {
+
 				if (ev.getEventType() != SerialPort.LISTENING_EVENT_DATA_AVAILABLE)
 					return;
 
@@ -884,7 +928,7 @@ public class SnatchFreezer extends Application {
 						case COMMAND_SET_CYCLE_COUNT: {
 							System.out.println("count:" + value);
 							buildBuffer(ev.getSerialPort());
-							// TODO cycleIndicator.setProgress((double) value / maxCycles.getValue());
+							progressIndicator.setProgress((double) value / cyclesSpinner.getValue());
 							break;
 						}
 						case COMMAND_LOG_DEBUG: {
@@ -922,9 +966,9 @@ public class SnatchFreezer extends Application {
 								@Override
 								public void run() {
 									camera.setDisable(false);
-									// TODO
-									// transmissionIndicator.setProgress(0f);
-									// cycleIndicator.setProgress(0f);
+
+									transferIndicator.setProgress(0f);
+									progressIndicator.setProgress(0f);
 									// actionButton.setStyle("-fx-base: #00ff00;");
 									System.out.println("Finished");
 								}
@@ -971,7 +1015,7 @@ public class SnatchFreezer extends Application {
 	private void run() throws Exception {
 
 		// actionButton.setStyle("-fx-base: #ff0000;");
-		// cycleIndicator.setProgress(0f);
+		progressIndicator.setProgress(0f);
 
 		if (buildShotConfiguration()) {
 			camera.setDisable(true);
@@ -981,11 +1025,11 @@ public class SnatchFreezer extends Application {
 			canceled = false;
 			sendNextCommand();
 		} else {
-			Alert alert = new Alert(AlertType.WARNING);
-			alert.setTitle(messages.getString("message.warning"));
-			alert.setHeaderText(null);
-			alert.setContentText(messages.getString("message.no_actions"));
-			alert.showAndWait();
+			// Alert alert = new Alert(AlertType.WARNING);
+			// alert.setTitle(messages.getString("message.warning"));
+			// alert.setHeaderText(null);
+			// alert.setContentText(messages.getString("message.no_actions"));
+			// alert.showAndWait();
 		}
 	}
 
@@ -998,17 +1042,15 @@ public class SnatchFreezer extends Application {
 			System.out.println("Send Command");
 			currentCommandBuffer = dataIterator.next();
 			int index = cb.indexOfCommand(currentCommandBuffer);
-
 			double d = (double) index / cb.getCommandListSize();
-
-			// TODO transmissionIndicator.setProgress(d);
+			transferIndicator.setProgress(d);
 
 			serialPort.writeBytes(currentCommandBuffer, currentCommandBuffer.length);
 			serialPort.getOutputStream().flush();
 		} else {
 			System.out.println("No More Commands");
 			dataIterator = null;
-			// TODO transmissionIndicator.setProgress(1f);
+			transferIndicator.setProgress(1f);
 		}
 		return hasNext;
 	}

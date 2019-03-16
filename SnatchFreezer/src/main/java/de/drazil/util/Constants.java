@@ -1,4 +1,4 @@
-package de.drazil.snatchfreezer;
+package de.drazil.util;
 
 public class Constants {
 
