@@ -83,10 +83,12 @@ import de.drazil.util.EditCell;
 import de.drazil.util.Long2StringConverter;
 import de.drazil.util.NumericConverter;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -176,6 +178,9 @@ public class SnatchFreezer extends Application {
 	private Spinner<Integer> cycleDelaySpinner = null;
 	private TextArea console = null;
 	private TextArea description = null;
+	private Label connectedButton = null;
+	private ProgressIndicator transferIndicator = null;
+	private ProgressIndicator progressIndicator = null;
 
 	private Iterator<byte[]> dataIterator;
 	private byte currentCommandBuffer[];
@@ -267,6 +272,11 @@ public class SnatchFreezer extends Application {
 		MenuItem testAll = new MenuItem(messages.getString("menu.control.testAll"));
 		controlMenu.getItems().addAll(flushAll, testAll);
 
+		Menu presetMenu = new Menu(messages.getString("menu.preset"));
+		MenuItem presetCROWN = new MenuItem(messages.getString("menu.preset.crown"));
+		MenuItem presetTAT = new MenuItem(messages.getString("menu.preset.tat"));
+		presetMenu.getItems().addAll(presetCROWN, presetTAT);
+
 		Menu helpMenu = new Menu(messages.getString("menu.help"));
 		MenuItem help = new MenuItem(messages.getString("menu.help.help"));
 		MenuItem checkUpdates = new MenuItem(messages.getString("menu.help.updates"));
@@ -276,6 +286,7 @@ public class SnatchFreezer extends Application {
 		MenuBar menubar = new MenuBar();
 		menubar.getMenus().add(applicationMenu);
 		menubar.getMenus().add(controlMenu);
+		menubar.getMenus().add(presetMenu);
 		menubar.getMenus().add(helpMenu);
 		valveBox = new GridPane();
 		TitledPane valvePane = new TitledPane(messages.getString("pane.devices"), valveBox);
@@ -305,8 +316,17 @@ public class SnatchFreezer extends Application {
 			}
 		});
 
-		ProgressIndicator progressIndicator = new ProgressIndicator();
-		progressIndicator.setProgress(-1f);
+		transferIndicator = new ProgressIndicator(0);
+		transferIndicator.setProgress(20);
+		transferIndicator.setPrefHeight(60);
+		transferIndicator.setPrefWidth(60);
+		transferIndicator.setPadding(new Insets(10, 0, 0, 0));
+
+		progressIndicator = new ProgressIndicator(0);
+		progressIndicator.setProgress(20);
+		progressIndicator.setPrefHeight(60);
+		progressIndicator.setPrefWidth(60);
+		progressIndicator.setPadding(new Insets(10, 0, 0, 0));
 
 		console = new TextArea();
 		description = new TextArea();
@@ -330,19 +350,24 @@ public class SnatchFreezer extends Application {
 		formPane.add(new Label(messages.getString("label.serialPort")), 0, 0);
 		formPane.add(serialPortComboBox, 1, 0);
 
+		connectedButton = new Label("\uf119");
+		connectedButton.getStyleClass().add("imageLabel");
+		connectedButton.getStyleClass().add("darkRedButton");
+		formPane.add(connectedButton, 2, 0);
+
 		cyclesSpinner = new Spinner<Integer>(1, 50, 1);
 		cyclesSpinner.setEditable(true);
 
 		formPane.add(new Label(messages.getString("label.cycles")), 0, 1);
-		formPane.add(cyclesSpinner, 1, 1);
+		formPane.add(cyclesSpinner, 1, 1, 2, 1);
 
 		cycleDelaySpinner = new Spinner<Integer>(0, 10000, 0, 500);
 		cycleDelaySpinner.setEditable(true);
 		formPane.add(new Label(messages.getString("label.cycleDelay")), 0, 2);
-		formPane.add(cycleDelaySpinner, 1, 2);
+		formPane.add(cycleDelaySpinner, 1, 2, 2, 1);
 
 		ToolBar actionBar = new ToolBar();
-		actionBar.getItems().addAll(spacer, camera);
+		actionBar.getItems().addAll(spacer, camera, transferIndicator, progressIndicator);
 
 		HBox controlBar = new HBox();
 		controlBar.getChildren().addAll(formPane, actionBar);
@@ -354,8 +379,6 @@ public class SnatchFreezer extends Application {
 
 		rightPane.getChildren().addAll(cameraFlashPane, controlPane);
 		rightPane.prefHeightProperty().bind(valvePane.heightProperty());
-
-		// actionBar.prefWidthProperty().bind(controlPane.widthProperty().subtract(formPane.getPrefWidth()));
 
 		HBox controlSplitPane = new HBox();
 		controlSplitPane.getChildren().addAll(valvePane, rightPane);
@@ -374,9 +397,16 @@ public class SnatchFreezer extends Application {
 				System.exit(0);
 			}
 		});
+
 		primaryStage.show();
-		initialzeSerialPortSelector();
-		initializeSerialConnection();
+
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				initialzeSerialPortSelector();
+				initializeSerialConnection();
+			}
+		});
 	}
 
 	private void createTableSet(GridPane grid, int tableCount, int rowCount, List<Integer> pinOutMapping) {
@@ -786,7 +816,11 @@ public class SnatchFreezer extends Application {
 
 	private void initializeSerialConnection() {
 		serialPort.setBaudRate(57600);
-		serialPort.openPort();
+		if (serialPort.openPort()) {
+			connectedButton.getStyleClass().add("darkGreenButton");
+			connectedButton.setText("\uf118");
+		}
+
 		serialPort.addDataListener(new SerialPortDataListener() {
 			@Override
 			public int getListeningEvents() {
@@ -795,6 +829,7 @@ public class SnatchFreezer extends Application {
 
 			@Override
 			public void serialEvent(SerialPortEvent ev) {
+
 				if (ev.getEventType() != SerialPort.LISTENING_EVENT_DATA_AVAILABLE)
 					return;
 
@@ -893,7 +928,7 @@ public class SnatchFreezer extends Application {
 						case COMMAND_SET_CYCLE_COUNT: {
 							System.out.println("count:" + value);
 							buildBuffer(ev.getSerialPort());
-							// TODO cycleIndicator.setProgress((double) value / maxCycles.getValue());
+							progressIndicator.setProgress((double) value / cyclesSpinner.getValue());
 							break;
 						}
 						case COMMAND_LOG_DEBUG: {
@@ -931,9 +966,9 @@ public class SnatchFreezer extends Application {
 								@Override
 								public void run() {
 									camera.setDisable(false);
-									// TODO
-									// transmissionIndicator.setProgress(0f);
-									// cycleIndicator.setProgress(0f);
+
+									transferIndicator.setProgress(0f);
+									progressIndicator.setProgress(0f);
 									// actionButton.setStyle("-fx-base: #00ff00;");
 									System.out.println("Finished");
 								}
@@ -980,7 +1015,7 @@ public class SnatchFreezer extends Application {
 	private void run() throws Exception {
 
 		// actionButton.setStyle("-fx-base: #ff0000;");
-		// cycleIndicator.setProgress(0f);
+		progressIndicator.setProgress(0f);
 
 		if (buildShotConfiguration()) {
 			camera.setDisable(true);
@@ -1007,17 +1042,15 @@ public class SnatchFreezer extends Application {
 			System.out.println("Send Command");
 			currentCommandBuffer = dataIterator.next();
 			int index = cb.indexOfCommand(currentCommandBuffer);
-
 			double d = (double) index / cb.getCommandListSize();
-
-			// TODO transmissionIndicator.setProgress(d);
+			transferIndicator.setProgress(d);
 
 			serialPort.writeBytes(currentCommandBuffer, currentCommandBuffer.length);
 			serialPort.getOutputStream().flush();
 		} else {
 			System.out.println("No More Commands");
 			dataIterator = null;
-			// TODO transmissionIndicator.setProgress(1f);
+			transferIndicator.setProgress(1f);
 		}
 		return hasNext;
 	}

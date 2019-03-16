@@ -293,6 +293,11 @@
 	-fx-alignment: CENTER-RIGHT;
 }
 
+.imageLabel{
+	-fx-font-family: "Font Awesome 5 Free Solid";
+	-fx-font-size: 20px;
+}
+
 .button {
 	-fx-font-family: "Font Awesome 5 Free Solid";
 	-fx-font-size: 20px;
@@ -354,6 +359,10 @@
 	-fx-border-radius: 0;
 }
 
+.progress-indicator{
+	-fx-text-fill: #ffffff;
+}
+
 .testButton {
 	-fx-font-family: "Font Awesome 5 Free Solid";
 	-fx-text-fill: #d5d500;
@@ -388,6 +397,14 @@
 
 .greenButton {
 	-fx-text-fill: #00df00;
+}
+
+.darkRedButton {
+	-fx-text-fill: #c73f42;
+}
+
+.darkGreenButton {
+	-fx-text-fill: #00b700;
 }
 
 .greenButton:hover {
