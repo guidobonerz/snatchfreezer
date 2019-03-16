@@ -196,12 +196,29 @@ public class SnatchFreezer extends Application {
 	private int readIndex = 0;
 	private boolean canceled = false;
 
+	private List<Integer> pinOutMappingValve = null;
+	private List<Integer> pinOutMappingCameraFlash = null;
+
 	public static void main(String[] args) {
 		launch(args);
 	}
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		pinOutMappingValve = new ArrayList<Integer>();
+		pinOutMappingValve.add(new Integer(2));
+		pinOutMappingValve.add(new Integer(3));
+		pinOutMappingValve.add(new Integer(4));
+		pinOutMappingValve.add(new Integer(5));
+		pinOutMappingValve.add(new Integer(6));
+		pinOutMappingValve.add(new Integer(7));
+
+		pinOutMappingCameraFlash = new ArrayList<Integer>();
+		pinOutMappingCameraFlash.add(new Integer(8));
+		pinOutMappingCameraFlash.add(new Integer(9));
+		pinOutMappingCameraFlash.add(new Integer(10));
+		pinOutMappingCameraFlash.add(new Integer(11));
+
 		initialzeSerialPortSelector();
 		initializeSerialConnection();
 		cb = new ConfigurationBuilder();
@@ -256,13 +273,13 @@ public class SnatchFreezer extends Application {
 		valvePane.setCollapsible(false);
 		valvePane.getStyleClass().add("titledValvePane");
 
-		createTableSet(valveBox, 6, 5);
+		createTableSet(valveBox, 6, 5, pinOutMappingValve);
 
 		actionBox = new GridPane();
 		TitledPane cameraFlashPane = new TitledPane(messages.getString("pane.camera_flash"), actionBox);
 		cameraFlashPane.getStyleClass().add("titledActionPane");
 		cameraFlashPane.setCollapsible(false);
-		createTableSet(actionBox, 4, 1);
+		createTableSet(actionBox, 4, 1, pinOutMappingCameraFlash);
 
 		HBox actionButtonPane = new HBox();
 		actionButtonPane.setMinHeight(60);
@@ -351,13 +368,13 @@ public class SnatchFreezer extends Application {
 
 	}
 
-	private void createTableSet(GridPane grid, int tableCount, int rowCount) {
+	private void createTableSet(GridPane grid, int tableCount, int rowCount, List<Integer> pinOutMapping) {
 		for (int i = 0, x = 0, y = 0; i < tableCount; i++) {
 			if ((x % 2) == 0) {
 				x = 0;
 				y++;
 			}
-			ScrollPane sp = new ScrollPane(createTable(i + 1, rowCount, rowCount > 1));
+			ScrollPane sp = new ScrollPane(createTable(i, rowCount, rowCount > 1, pinOutMapping));
 			sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 			sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 			grid.add(sp, x, y);
@@ -366,7 +383,7 @@ public class SnatchFreezer extends Application {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Node createTable(int id, int rowCount, boolean canFlush) {
+	private Node createTable(int id, int rowCount, boolean canFlush, List<Integer> pinOutMapping) {
 
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -450,25 +467,25 @@ public class SnatchFreezer extends Application {
 		setDelayIncrementColumnFactory(table, delayIncrementColumn);
 		setReleaseIncrementColumnFactory(table, releaseIncrementColumn);
 
-		Label idLabel = new Label(Integer.toString(id));
+		Label idLabel = new Label(Integer.toString(id+1));
 		idLabel.getStyleClass().add("fatLabel");
 
 		TextField description = new TextField();
 		ToggleButton flush = new ToggleButton("\uf576");
 		flush.getStyleClass().add("flushButton");
-		flush.setUserData(id);
+		flush.setUserData(pinOutMapping.get(id));
 		flush.setOnAction(value -> {
 			ToggleButton b = (ToggleButton) value.getSource();
 			int buttonId = (Integer) b.getUserData();
-			buildFlushConfiguration(buttonId + 1, b.isSelected());
+			buildFlushConfiguration(buttonId, b.isSelected());
 		});
 		Button bolt = new Button("\uf0e7");
 		bolt.getStyleClass().add("testButton");
-		bolt.setUserData(id);
+		bolt.setUserData(pinOutMapping.get(id));
 		bolt.setOnAction(value -> {
 			Button b = (Button) value.getSource();
 			int buttonId = (Integer) b.getUserData();
-			buildTestConfiguration(buttonId + 1);
+			buildTestConfiguration(buttonId);
 		});
 
 		ToggleButton activeButton = new ToggleButton("\uf205");
