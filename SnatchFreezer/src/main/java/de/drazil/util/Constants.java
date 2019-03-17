@@ -35,6 +35,7 @@ public class Constants {
 	public final static int FLUSH_ON = 1;
 	public final static int FLUSH_OFF = 2;
 	public final static int TEST = 3;
+	public final static int HELO = 4;
 
 	public final static int MESSAGE_BYTE = 1;
 	public final static int MESSAGE_WORD = 2;

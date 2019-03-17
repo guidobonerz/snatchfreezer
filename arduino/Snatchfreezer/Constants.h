@@ -33,6 +33,7 @@ const int SHOT = 0;
 const int FLUSH_ON = 1;
 const int FLUSH_OFF = 2;
 const int TEST = 3;
+const int HELO = 4;
 
 const int MESSAGE_BYTE=1;
 const int MESSAGE_WORD=2;

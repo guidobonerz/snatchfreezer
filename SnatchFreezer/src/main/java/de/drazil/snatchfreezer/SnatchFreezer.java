@@ -56,6 +56,7 @@ import static de.drazil.util.Constants.SHOT;
 import static de.drazil.util.Constants.SYNCBYTE1;
 import static de.drazil.util.Constants.SYNCBYTE2;
 import static de.drazil.util.Constants.TEST;
+import static de.drazil.util.Constants.HELO;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -200,6 +201,7 @@ public class SnatchFreezer extends Application {
 	private int syncCount = 0;
 	private int readIndex = 0;
 	private boolean canceled = false;
+	private boolean heloMode = false;
 
 	private List<Integer> pinOutMappingValve = null;
 	private List<Integer> pinOutMappingCameraFlash = null;
@@ -787,6 +789,21 @@ public class SnatchFreezer extends Application {
 		}
 	}
 
+	private void buildHeloConfiguration() {
+		cb.reset();
+		cb.addRun(HELO);
+		phase = READ_DATA_PREFIX;
+		byteBuffer = new byte[] {};
+		readIndex = 0;
+		canceled = false;
+		try {
+			sendNextCommand();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
 	private boolean isTableEmpty(ObservableList<ActionItemPropertyBean> list) {
 		int x = 0;
 		for (int i = 0; i < list.size(); i++) {
@@ -817,8 +834,8 @@ public class SnatchFreezer extends Application {
 	private void initializeSerialConnection() {
 		serialPort.setBaudRate(57600);
 		if (serialPort.openPort()) {
-			connectedButton.getStyleClass().add("darkGreenButton");
 			connectedButton.setText("\uf118");
+			connectedButton.getStyleClass().add("darkGreenButton");
 		}
 
 		serialPort.addDataListener(new SerialPortDataListener() {
