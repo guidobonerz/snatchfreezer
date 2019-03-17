@@ -265,6 +265,12 @@ void loop()
               phase = PHASE_READ_SERIAL;
               break;
             }
+            case HELO:
+            {
+              Log::echo("HELLO_SNATCHFREEZER");
+              phase = PHASE_READ_SERIAL;
+              break;
+            }
         }
       }
   }

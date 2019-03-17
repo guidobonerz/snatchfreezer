@@ -8,6 +8,20 @@ This project also contains all required software and PCB layouts including:
 - Arduino Sketch
 - Eagle PCB
 
+Current Features:
+- Connect up to six 12V driven Valves or similar devices directly with 5 timing entries each.
+- Connect up to two camera and/or flashes.
+
+- Load and Save your settings
+- Test all channels separately or altogether for 100ms.
+- Toggle flushing all connected or single valves from UI.
+- Set amount cycle loops
+- Set delay time after each cycle loop.
+- Describe each channel and/or the whole project
+- Presets for TaT and Crown
+- View log protocol
+
+
 Future plans:
 - WLAN and/or Bluetooth Module
 - Rest Api
@@ -19,3 +33,12 @@ Future plans:
 
 ## PCB
 ![screenshot1](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/pcb.jpg)
+
+## Frame
+![screenshot1](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/frame.jpg)
+
+## Siphons
+![screenshot1](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/siphons.jpg)
+
+## Valves
+![screenshot1](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/valves.jpg)
