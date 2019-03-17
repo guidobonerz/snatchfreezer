@@ -14,7 +14,7 @@ Current Features:
 
 - Load and Save your settings
 - Test all channels separately or altogether for 100ms.
-- Toggle flushing all connected or single valves from UI.
+- Toggle flushing all or single siphons from UI.
 - Set amount cycle loops
 - Set delay time after each cycle loop.
 - Describe each channel and/or the whole project
