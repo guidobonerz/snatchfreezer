@@ -9,7 +9,7 @@ This project also contains all required software and PCB layouts including:
 - Eagle PCB
 
 Current Features:
-- Connect up to six 12V driven Valves or similar devices directly with 5 timing entries each.
+- Connect up to six 12V driven valves or similar devices directly with 5 timing entries each.
 - Connect up to two camera and/or flashes.
 
 - Load and Save your settings
