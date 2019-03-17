@@ -21,6 +21,8 @@ Current Features:
 - Presets for TaT and Crown
 - View log protocol
 
+- Minimum valve response time : 0,0039 s -> 3.9 ms -> 3900 us
+
 
 Future plans:
 - WLAN and/or Bluetooth Module

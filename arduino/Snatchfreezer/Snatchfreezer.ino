@@ -147,7 +147,7 @@ void loop()
       {
         if (Serial && Serial.available() != 0)
         {
-          delay(1);
+          delay(10);
           uint8_t b = (uint8_t)Serial.read();
           parse(b);
 
