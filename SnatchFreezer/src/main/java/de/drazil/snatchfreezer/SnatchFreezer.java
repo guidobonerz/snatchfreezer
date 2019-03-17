@@ -13,7 +13,7 @@ import static de.drazil.util.Constants.COMMAND_REPEAT;
 import static de.drazil.util.Constants.COMMAND_RESET;
 import static de.drazil.util.Constants.COMMAND_RUN;
 import static de.drazil.util.Constants.COMMAND_SET_CYCLE_COUNT;
-import static de.drazil.util.Constants.DEBUG;
+import static de.drazil.util.Constants.OFF;
 import static de.drazil.util.Constants.EXECUTE_COMMAND;
 import static de.drazil.util.Constants.FLUSH_OFF;
 import static de.drazil.util.Constants.FLUSH_ON;
@@ -736,7 +736,7 @@ public class SnatchFreezer extends Application {
 
 	private boolean buildShotConfiguration() {
 		cb.reset();
-		cb.addSetLogLevel(DEBUG);
+		cb.addSetLogLevel(OFF);
 		cb.addReset();
 		int hasActions = 0;
 		for (int i = 0; i < actionList.size(); i++) {
