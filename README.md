@@ -20,7 +20,7 @@ Current Features:
 - Describe each channel and/or the whole project
 - Presets for TaT and Crown
 - View log protocol
-- Minimum valve response time : 0,0039 s -> 3.9 ms -> 3900 us
+- Minimum valve delay/release time combination: 0,015 s -> 15 ms -> 15000 us / 0,004 s -> 4 ms -> 4000 us
 
 Known Bugs:
 - Data transfer sometimes hangs
