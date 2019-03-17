@@ -15,13 +15,15 @@ Current Features:
 - Load and Save your settings
 - Test all channels separately or altogether for 100ms.
 - Toggle flushing all or single siphons from UI.
-- Set amount cycle loops
+- Set amount of cycle loops
 - Set delay time after each cycle loop.
 - Describe each channel and/or the whole project
 - Presets for TaT and Crown
 - View log protocol
-
 - Minimum valve response time : 0,0039 s -> 3.9 ms -> 3900 us
+
+Known Bugs:
+- Data transfer sometimes hangs
 
 
 Future plans:
