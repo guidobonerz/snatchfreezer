@@ -93,6 +93,7 @@ const int VALVE6_PIN = 7;
 const int ACTIVE_PIN = 13;
 const int INACTIVE = 100;
 
+const int PHASE_HELLO = 0;
 const int PHASE_READ_SERIAL = 10;
 const int PHASE_EXECUTE_COMMAND = 20;
 const int PHASE_RUN_PROGRAM = 30;

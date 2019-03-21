@@ -13,10 +13,11 @@ import static de.drazil.util.Constants.COMMAND_REPEAT;
 import static de.drazil.util.Constants.COMMAND_RESET;
 import static de.drazil.util.Constants.COMMAND_RUN;
 import static de.drazil.util.Constants.COMMAND_SET_CYCLE_COUNT;
-import static de.drazil.util.Constants.OFF;
 import static de.drazil.util.Constants.EXECUTE_COMMAND;
 import static de.drazil.util.Constants.FLUSH_OFF;
 import static de.drazil.util.Constants.FLUSH_ON;
+import static de.drazil.util.Constants.HELO;
+import static de.drazil.util.Constants.INFO;
 import static de.drazil.util.Constants.MESSAGE_ADD_ACTION;
 import static de.drazil.util.Constants.MESSAGE_ADD_ACTION_TIMIMGS;
 import static de.drazil.util.Constants.MESSAGE_BYTE;
@@ -56,7 +57,6 @@ import static de.drazil.util.Constants.SHOT;
 import static de.drazil.util.Constants.SYNCBYTE1;
 import static de.drazil.util.Constants.SYNCBYTE2;
 import static de.drazil.util.Constants.TEST;
-import static de.drazil.util.Constants.HELO;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -122,6 +122,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
@@ -203,9 +204,13 @@ public class SnatchFreezer extends Application {
 	private boolean canceled = false;
 	private boolean heloMode = false;
 
+	private ExtensionFilter fileFilter = null;
+
 	private List<Integer> pinOutMappingValve = null;
 	private List<Integer> pinOutMappingCameraFlash = null;
 	private List<Integer> pinOutMappingAll = null;
+
+	private File projectFolder = null;
 
 	public static void main(String[] args) {
 		launch(args);
@@ -213,6 +218,17 @@ public class SnatchFreezer extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+
+		String sep = System.getProperty("file.separator");
+		File projectFolder = new File(System.getProperty("user.home") + sep + ".snatchfreezer");
+		boolean exists = projectFolder.exists();
+		if (!exists) {
+			projectFolder.mkdir();
+		}
+
+		fileFilter = new ExtensionFilter("SnatchFreezer Settings", "sf");
+		
+
 		pinOutMappingValve = new ArrayList<Integer>();
 		pinOutMappingValve.add(new Integer(2));
 		pinOutMappingValve.add(new Integer(3));
@@ -244,18 +260,21 @@ public class SnatchFreezer extends Application {
 
 		Menu applicationMenu = new Menu(messages.getString("menu.application"));
 		MenuItem newProject = new MenuItem(messages.getString("menu.application.new"));
+		MenuItem recent = new MenuItem(messages.getString("menu.application.recent"));
 		MenuItem loadProject = new MenuItem(messages.getString("menu.application.load"));
 		loadProject.setOnAction(value -> {
-			if (file == null) {
-				FileChooser fc = new FileChooser();
-				file = fc.showOpenDialog(null);
-			}
+			FileChooser fc = new FileChooser();
+			fc.setInitialDirectory(projectFolder);
+			fc.setSelectedExtensionFilter(fileFilter);
+			file = fc.showOpenDialog(null);
 			loadSettings(file);
 		});
 		MenuItem saveProject = new MenuItem(messages.getString("menu.application.save"));
 		saveProject.setOnAction(value -> {
 			if (file == null) {
 				FileChooser fc = new FileChooser();
+				fc.setInitialDirectory(projectFolder);
+				fc.setSelectedExtensionFilter(fileFilter);
 				file = fc.showSaveDialog(null);
 			}
 			saveSettings(file);
@@ -271,8 +290,8 @@ public class SnatchFreezer extends Application {
 			System.exit(0);
 		});
 
-		applicationMenu.getItems().addAll(newProject, loadProject, saveProject, saveAsProject, new SeparatorMenuItem(),
-				quitApplciation);
+		applicationMenu.getItems().addAll(newProject, recent, loadProject, saveProject, saveAsProject,
+				new SeparatorMenuItem(), quitApplciation);
 
 		Menu controlMenu = new Menu(messages.getString("menu.control"));
 		CheckMenuItem flushAll = new CheckMenuItem(messages.getString("menu.control.flushAll"));
@@ -744,7 +763,7 @@ public class SnatchFreezer extends Application {
 
 	private boolean buildShotConfiguration() {
 		cb.reset();
-		cb.addSetLogLevel(OFF);
+		cb.addSetLogLevel(INFO);
 		cb.addReset();
 		int hasActions = 0;
 		for (int i = 0; i < actionList.size(); i++) {
@@ -841,7 +860,7 @@ public class SnatchFreezer extends Application {
 	}
 
 	private void initializeSerialConnection() {
-		serialPort.setBaudRate(57600);
+		serialPort.setComPortParameters(19200, 8, 1, 0);
 		if (serialPort.openPort()) {
 			connectedButton.setText("\uf118");
 			connectedButton.getStyleClass().add("darkGreenButton");
@@ -973,6 +992,10 @@ public class SnatchFreezer extends Application {
 							break;
 						}
 						case COMMAND_ECHO: {
+							if (s.equals("HELLO_SNATCHFREEZER")) {
+								System.out.println("CONNECTED");
+							}
+
 							echo(s);
 							break;
 						}
@@ -981,7 +1004,7 @@ public class SnatchFreezer extends Application {
 							break;
 						}
 						case COMMAND_DUMMY: {
-							// System.out.println("dummy");
+							//System.out.println("dummy");
 							break;
 						}
 						case COMMAND_FINISHED: {
