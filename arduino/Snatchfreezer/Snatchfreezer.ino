@@ -136,7 +136,7 @@ void setCycleCount(uint8_t cycleCount)
 
 void setCycleDelay(uint32_t cycleDelay)
 {
-  cycleDelayTime = cycleDelay * 1000;
+  cycleDelayTime = cycleDelay ;
 }
 
 void loop()
@@ -240,7 +240,7 @@ void loop()
               uint8_t pin = (runMode >> 8) & 0xff;
               pinMode(pin, OUTPUT);
               digitalWrite(pin, HIGH);
-              uint32_t testTime = micros() + 500000;
+              uint32_t testTime = micros() + 50000;
               while (micros() < testTime)
               {
 
@@ -265,7 +265,7 @@ void loop()
               phase = PHASE_READ_SERIAL;
               break;
             }
-            case HELO:
+          case HELO:
             {
               Log::echo("HELLO_SNATCHFREEZER");
               phase = PHASE_READ_SERIAL;

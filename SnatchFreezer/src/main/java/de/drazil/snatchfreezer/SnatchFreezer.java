@@ -205,6 +205,7 @@ public class SnatchFreezer extends Application {
 
 	private List<Integer> pinOutMappingValve = null;
 	private List<Integer> pinOutMappingCameraFlash = null;
+	private List<Integer> pinOutMappingAll = null;
 
 	public static void main(String[] args) {
 		launch(args);
@@ -225,6 +226,10 @@ public class SnatchFreezer extends Application {
 		pinOutMappingCameraFlash.add(new Integer(9));
 		pinOutMappingCameraFlash.add(new Integer(10));
 		pinOutMappingCameraFlash.add(new Integer(11));
+
+		pinOutMappingAll = new ArrayList<Integer>();
+		pinOutMappingAll.addAll(pinOutMappingValve);
+		pinOutMappingAll.addAll(pinOutMappingCameraFlash);
 
 		cb = new ConfigurationBuilder();
 		actionList = new ArrayList<ObservableList<ActionItemPropertyBean>>();
@@ -703,9 +708,12 @@ public class SnatchFreezer extends Application {
 			for (int j = 0; j < actionItemBeanList.size(); j++) {
 
 				ActionItemBean actionItembean = actionItemBeanList.get(j);
-				list.add(new ActionItemPropertyBean(actionItembean.getId(), actionItembean.getDelay(),
-						actionItembean.getRelease(), actionItembean.getDelayIncrement(),
-						actionItembean.getReleaseIncrement(), actionItembean.isIgnore()));
+				ActionItemPropertyBean propertyBean = new ActionItemPropertyBean(actionItembean.getId(),
+						actionItembean.getDelay(), actionItembean.getRelease(), actionItembean.getDelayIncrement(),
+						actionItembean.getReleaseIncrement(), actionItembean.isIgnore());
+				propertyBean.setBean(actionItembean);
+				list.add(propertyBean);
+
 			}
 		}
 	}
@@ -743,7 +751,8 @@ public class SnatchFreezer extends Application {
 			ObservableList<ActionItemPropertyBean> list = actionList.get(i);
 			if (!isTableEmpty(list)) {
 				hasActions++;
-				cb.addAction(i + 2);
+				// cb.addAction(i + 2);
+				cb.addAction(pinOutMappingAll.get(i));
 				for (int j = 0; j < list.size(); j++) {
 					ActionItemPropertyBean bean = list.get(j);
 					if (!isEmptyOrIgnoredAction(bean)) {
