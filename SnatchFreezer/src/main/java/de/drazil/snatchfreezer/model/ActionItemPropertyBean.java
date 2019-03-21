@@ -125,4 +125,8 @@ public class ActionItemPropertyBean {
 	public ActionItemBean getBean() {
 		return bean;
 	}
+
+	public void setBean(ActionItemBean bean) {
+		this.bean = bean;
+	}
 }

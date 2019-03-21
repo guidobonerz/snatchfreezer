@@ -47,12 +47,13 @@ bool canceled = false;
 bool pause = false;
 
 void setup() {
-  Serial.begin(57600);
+  Serial.begin(19200,SERIAL_8N1);
   pinMode(ACTIVE_PIN, OUTPUT); //ControlLED
   //pinMode(2, OUTPUT);
 
   serialReadPhase = READ_DATA_PREFIX;
   phase = PHASE_READ_SERIAL;
+  //phase = PHASE_HELLO;
   dataIndex = 0;
   dataLength = 0;
   reset();
@@ -80,9 +81,14 @@ void  resetStartTime()
   }
 }
 
-void reset()
+void clearSerial()
 {
   while (Serial.read() != -1) {};
+}
+
+void reset()
+{
+  clearSerial();
   clearActions();
   maxActionCount = 0;
   currentCycleCount = 0;
@@ -136,23 +142,30 @@ void setCycleCount(uint8_t cycleCount)
 
 void setCycleDelay(uint32_t cycleDelay)
 {
-  cycleDelayTime = cycleDelay * 1000;
+  cycleDelayTime = cycleDelay ;
 }
 
 void loop()
 {
   switch (phase)
   {
+    case PHASE_HELLO:
+      {
+        if (Serial)
+        {
+          Log::echo("HELLO_SNATCHFREEZER");
+          phase = PHASE_READ_SERIAL;
+        }
+        break;
+      }
     case PHASE_READ_SERIAL:
       {
         if (Serial && Serial.available() != 0)
         {
-          delay(10);
+          delay(2);
           uint8_t b = (uint8_t)Serial.read();
           parse(b);
-
         }
-
         break;
       }
     case PHASE_EXECUTE_COMMAND:
@@ -240,7 +253,7 @@ void loop()
               uint8_t pin = (runMode >> 8) & 0xff;
               pinMode(pin, OUTPUT);
               digitalWrite(pin, HIGH);
-              uint32_t testTime = micros() + 500000;
+              uint32_t testTime = micros() + 50000;
               while (micros() < testTime)
               {
 
@@ -265,7 +278,7 @@ void loop()
               phase = PHASE_READ_SERIAL;
               break;
             }
-            case HELO:
+          case HELO:
             {
               Log::echo("HELLO_SNATCHFREEZER");
               phase = PHASE_READ_SERIAL;
