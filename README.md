@@ -32,7 +32,7 @@ Future plans:
 - Android Client
 
 
-#Build Java Application
+# Build Java Application
 mvn jfx:jar
 
 
