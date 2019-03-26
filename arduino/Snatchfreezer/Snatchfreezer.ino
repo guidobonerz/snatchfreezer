@@ -47,7 +47,7 @@ bool canceled = false;
 bool pause = false;
 
 void setup() {
-  Serial.begin(19200,SERIAL_8N1);
+  Serial.begin(19200 ,SERIAL_8N1);
   pinMode(ACTIVE_PIN, OUTPUT); //ControlLED
   //pinMode(2, OUTPUT);
 
@@ -162,7 +162,7 @@ void loop()
       {
         if (Serial && Serial.available() != 0)
         {
-          delay(2);
+          delay(1);
           uint8_t b = (uint8_t)Serial.read();
           parse(b);
         }
