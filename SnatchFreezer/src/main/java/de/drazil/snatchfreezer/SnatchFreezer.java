@@ -17,7 +17,7 @@ import static de.drazil.util.Constants.EXECUTE_COMMAND;
 import static de.drazil.util.Constants.FLUSH_OFF;
 import static de.drazil.util.Constants.FLUSH_ON;
 import static de.drazil.util.Constants.HELO;
-import static de.drazil.util.Constants.INFO;
+import static de.drazil.util.Constants.OFF;
 import static de.drazil.util.Constants.MESSAGE_ADD_ACTION;
 import static de.drazil.util.Constants.MESSAGE_ADD_ACTION_TIMIMGS;
 import static de.drazil.util.Constants.MESSAGE_BYTE;
@@ -178,6 +178,7 @@ public class SnatchFreezer extends Application {
 	private ComboBox<String> serialPortComboBox = null;
 	private Spinner<Integer> cyclesSpinner = null;
 	private Spinner<Integer> cycleDelaySpinner = null;
+	private Spinner<Integer> shutterLagSpinner = null;
 	private TextArea console = null;
 	private TextArea description = null;
 	private Label connectedButton = null;
@@ -227,7 +228,6 @@ public class SnatchFreezer extends Application {
 		}
 
 		fileFilter = new ExtensionFilter("SnatchFreezer Settings", "sf");
-		
 
 		pinOutMappingValve = new ArrayList<Integer>();
 		pinOutMappingValve.add(new Integer(2));
@@ -383,7 +383,6 @@ public class SnatchFreezer extends Application {
 
 		cyclesSpinner = new Spinner<Integer>(1, 50, 1);
 		cyclesSpinner.setEditable(true);
-
 		formPane.add(new Label(messages.getString("label.cycles")), 0, 1);
 		formPane.add(cyclesSpinner, 1, 1, 2, 1);
 
@@ -392,6 +391,11 @@ public class SnatchFreezer extends Application {
 		formPane.add(new Label(messages.getString("label.cycleDelay")), 0, 2);
 		formPane.add(cycleDelaySpinner, 1, 2, 2, 1);
 
+		shutterLagSpinner = new Spinner<Integer>(0, 100, 37, 1);
+		shutterLagSpinner.setEditable(true);
+		formPane.add(new Label(messages.getString("label.shutterLag")), 0, 3);
+		formPane.add(shutterLagSpinner, 1, 3, 2, 1);
+
 		ToolBar actionBar = new ToolBar();
 		actionBar.getItems().addAll(spacer, camera, transferIndicator, progressIndicator);
 
@@ -399,7 +403,7 @@ public class SnatchFreezer extends Application {
 		controlBar.getChildren().addAll(formPane, actionBar);
 
 		control2.getChildren().addAll(controlBar, tabPane);
-		tabPane.setMinHeight(250);
+		tabPane.setMinHeight(240);
 
 		VBox rightPane = new VBox();
 
@@ -763,7 +767,7 @@ public class SnatchFreezer extends Application {
 
 	private boolean buildShotConfiguration() {
 		cb.reset();
-		cb.addSetLogLevel(INFO);
+		cb.addSetLogLevel(OFF);
 		cb.addReset();
 		int hasActions = 0;
 		for (int i = 0; i < actionList.size(); i++) {
@@ -795,7 +799,7 @@ public class SnatchFreezer extends Application {
 		readIndex = 0;
 		canceled = false;
 		try {
-			sendNextCommand();
+			sendCommand();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -810,7 +814,7 @@ public class SnatchFreezer extends Application {
 		readIndex = 0;
 		canceled = false;
 		try {
-			sendNextCommand();
+			sendCommand();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -825,7 +829,7 @@ public class SnatchFreezer extends Application {
 		readIndex = 0;
 		canceled = false;
 		try {
-			sendNextCommand();
+			sendCommand();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1004,7 +1008,7 @@ public class SnatchFreezer extends Application {
 							break;
 						}
 						case COMMAND_DUMMY: {
-							//System.out.println("dummy");
+							// System.out.println("dummy");
 							break;
 						}
 						case COMMAND_FINISHED: {
@@ -1034,7 +1038,7 @@ public class SnatchFreezer extends Application {
 								System.out.println("Next Serial Command");
 								try {
 									System.out.println("------------------------------------------------");
-									sendNextCommand();
+									sendCommand();
 								} catch (Exception e) {
 									e.printStackTrace();
 								}
@@ -1072,7 +1076,7 @@ public class SnatchFreezer extends Application {
 			byteBuffer = new byte[] {};
 			readIndex = 0;
 			canceled = false;
-			sendNextCommand();
+			sendCommand();
 		} else {
 			// Alert alert = new Alert(AlertType.WARNING);
 			// alert.setTitle(messages.getString("message.warning"));
@@ -1082,7 +1086,7 @@ public class SnatchFreezer extends Application {
 		}
 	}
 
-	private boolean sendNextCommand() throws Exception {
+	private boolean sendCommand() throws Exception {
 		if (dataIterator == null) {
 			dataIterator = cb.getIterator();
 		}
@@ -1095,7 +1099,7 @@ public class SnatchFreezer extends Application {
 			transferIndicator.setProgress(d);
 
 			serialPort.writeBytes(currentCommandBuffer, currentCommandBuffer.length);
-			serialPort.getOutputStream().flush();
+			// serialPort.getOutputStream().flush();
 		} else {
 			System.out.println("No More Commands");
 			dataIterator = null;

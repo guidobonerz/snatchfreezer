@@ -32,6 +32,10 @@ Future plans:
 - Android Client
 
 
+#Build Java Application
+mvn jfx:jar
+
+
 ## Controller View
 ![screenshot1](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/ControllerView.png)
 
