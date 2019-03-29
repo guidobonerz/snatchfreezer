@@ -36,8 +36,8 @@ Future plans:
 mvn jfx:jar
 
 
-#Download latest Frontend
-[a link](https://github.com/guidobonerz/snatchfreezer/blob/develop/download/snatchfreezer.zip)
+# Download latest Frontend
+[Snathfreezer Frontend](https://github.com/guidobonerz/snatchfreezer/blob/develop/download/snatchfreezer.zip)
 
 ## Controller View
 ![screenshot1](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/ControllerView.png)
