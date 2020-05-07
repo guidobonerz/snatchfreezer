@@ -17,7 +17,6 @@ import static de.drazil.util.Constants.EXECUTE_COMMAND;
 import static de.drazil.util.Constants.FLUSH_OFF;
 import static de.drazil.util.Constants.FLUSH_ON;
 import static de.drazil.util.Constants.HELO;
-import static de.drazil.util.Constants.OFF;
 import static de.drazil.util.Constants.MESSAGE_ADD_ACTION;
 import static de.drazil.util.Constants.MESSAGE_ADD_ACTION_TIMIMGS;
 import static de.drazil.util.Constants.MESSAGE_BYTE;
@@ -47,6 +46,7 @@ import static de.drazil.util.Constants.MESSAGE_STRING_PARAMETER;
 import static de.drazil.util.Constants.MESSAGE_SYNC1;
 import static de.drazil.util.Constants.MESSAGE_SYNC2;
 import static de.drazil.util.Constants.MESSAGE_WORD;
+import static de.drazil.util.Constants.OFF;
 import static de.drazil.util.Constants.PARAMETER_NUMBER;
 import static de.drazil.util.Constants.PARAMETER_STRING;
 import static de.drazil.util.Constants.READ_COMMAND;
@@ -92,6 +92,8 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ComboBox;
@@ -1087,6 +1089,9 @@ public class SnatchFreezer extends Application {
 	}
 
 	private boolean sendCommand() throws Exception {
+		if (!hasSerialConnection()) {
+			return false;
+		}
 		if (dataIterator == null) {
 			dataIterator = cb.getIterator();
 		}
@@ -1265,4 +1270,16 @@ public class SnatchFreezer extends Application {
 		return byteBuffer;
 	}
 
+	private boolean hasSerialConnection() {
+		boolean connected = true;
+		if (serialPort != null && !serialPort.isOpen() || serialPort == null) {
+			connected = false;
+			Alert alert = new Alert(AlertType.ERROR);
+			alert.setTitle(messages.getString("message.error"));
+			alert.setHeaderText(null);
+			alert.setContentText(messages.getString("message.no_serial_connection"));
+			alert.showAndWait();
+		}
+		return connected;
+	}
 }

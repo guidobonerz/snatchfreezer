@@ -4,18 +4,18 @@
 
 uint8_t shBuffer[10];
 
-
-
-void SerialHelper::sendNextCommand() {
+void SerialHelper::sendNextCommand()
+{
 	shBuffer[0] = SYNCBYTE1;
 	shBuffer[1] = SYNCBYTE2;
-	shBuffer[2] = COMMAND_NEXT; 
+	shBuffer[2] = COMMAND_NEXT;
 	shBuffer[3] = 0;
 	Serial.write(shBuffer, 4);
 	Serial.flush();
 }
 
-void SerialHelper::repeatCommand() {
+void SerialHelper::repeatCommand()
+{
 	shBuffer[0] = SYNCBYTE1;
 	shBuffer[1] = SYNCBYTE2;
 	shBuffer[2] = COMMAND_REPEAT;
@@ -23,7 +23,8 @@ void SerialHelper::repeatCommand() {
 	Serial.write(shBuffer, 4);
 	Serial.flush();
 }
-void SerialHelper::cancel() {
+void SerialHelper::cancel()
+{
 	shBuffer[0] = SYNCBYTE1;
 	shBuffer[1] = SYNCBYTE2;
 	shBuffer[2] = COMMAND_CANCEL;
@@ -32,7 +33,8 @@ void SerialHelper::cancel() {
 	Serial.flush();
 }
 
-void SerialHelper::finished() {
+void SerialHelper::finished()
+{
 	shBuffer[0] = SYNCBYTE1;
 	shBuffer[1] = SYNCBYTE2;
 	shBuffer[2] = COMMAND_FINISHED;
@@ -41,7 +43,8 @@ void SerialHelper::finished() {
 	Serial.flush();
 }
 
-void SerialHelper::setCycleCount(uint8_t count) {
+void SerialHelper::setCycleCount(uint8_t count)
+{
 	shBuffer[0] = SYNCBYTE1;
 	shBuffer[1] = SYNCBYTE2;
 	shBuffer[2] = COMMAND_SET_CYCLE_COUNT;

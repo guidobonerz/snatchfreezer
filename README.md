@@ -39,6 +39,11 @@ mvn jfx:jar
 # Download latest Frontend
 [Snathfreezer Frontend](https://github.com/guidobonerz/snatchfreezer/blob/develop/download/snatchfreezer.zip)
 
+## Shot 1
+![shot1](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/DSC0114.png)
+## Shot 2
+![shot2](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/DSC0147.png)
+
 ## Controller View
 ![screenshot1](https://github.com/guidobonerz/snatchfreezer/blob/develop/docs/ControllerView.png)
 

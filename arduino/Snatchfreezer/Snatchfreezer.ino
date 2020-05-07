@@ -4,19 +4,20 @@
 #include "Arduino.h"
 #include "SerialHelper.h"
 
-#define arraySize(x)  (sizeof(x) / sizeof((x)[0]))
+#define arraySize(x) (sizeof(x) / sizeof((x)[0]))
 
-struct ActionTimer {
+struct ActionTimer
+{
   bool started = false;
   bool finished = false;
   uint8_t pin = 0;
   uint8_t timerCount = 0;
   uint8_t maxTimerCount = 0;
   uint32_t targetTime = 0;
-  uint32_t delayStartTime[5] = { 0, 0, 0, 0, 0 };
-  uint32_t releaseStartTime[5] = { 0, 0, 0, 0, 0 };
-  uint32_t delayCycleIncrement[5] = { 0, 0, 0, 0, 0 };
-  uint32_t releaseCycleIncrement[5] = { 0, 0, 0, 0, 0 };
+  uint32_t delayStartTime[5] = {0, 0, 0, 0, 0};
+  uint32_t releaseStartTime[5] = {0, 0, 0, 0, 0};
+  uint32_t delayCycleIncrement[5] = {0, 0, 0, 0, 0};
+  uint32_t releaseCycleIncrement[5] = {0, 0, 0, 0, 0};
 } actionTimer[10];
 
 uint8_t readDataBuffer[100];
@@ -46,8 +47,9 @@ bool nextCycle = true;
 bool canceled = false;
 bool pause = false;
 
-void setup() {
-  Serial.begin(19200 ,SERIAL_8N1);
+void setup()
+{
+  Serial.begin(19200, SERIAL_8N1);
   pinMode(ACTIVE_PIN, OUTPUT); //ControlLED
   //pinMode(2, OUTPUT);
 
@@ -72,18 +74,20 @@ void clearActions()
   }
 }
 
-void  resetStartTime()
+void resetStartTime()
 {
   uint32_t startMillis = micros();
   for (uint8_t i = 0; i < arraySize(actionTimer); i++)
   {
-    actionTimer[i].targetTime =  startMillis + actionTimer[i].delayStartTime[0];
+    actionTimer[i].targetTime = startMillis + actionTimer[i].delayStartTime[0];
   }
 }
 
 void clearSerial()
 {
-  while (Serial.read() != -1) {};
+  while (Serial.read() != -1)
+  {
+  };
 }
 
 void reset()
@@ -142,7 +146,7 @@ void setCycleCount(uint8_t cycleCount)
 
 void setCycleDelay(uint32_t cycleDelay)
 {
-  cycleDelayTime = cycleDelay ;
+  cycleDelayTime = cycleDelay;
 }
 
 void loop()
@@ -179,9 +183,9 @@ void loop()
         {
           case SHOT:
             {
-              if ( millis() >= targetCycleDelayTime)
+              if (millis() >= targetCycleDelayTime)
               {
-                if (!nextCycle )
+                if (!nextCycle)
                 {
                   SerialHelper::setCycleCount(currentCycleCount + 1);
                   nextCycle = true;
@@ -194,7 +198,8 @@ void loop()
                 else
                 {
                   //-------------------------------------------------------
-                  for (int i = 0; i < maxActionCount; i++) {
+                  for (int i = 0; i < maxActionCount; i++)
+                  {
 
                     if (!actionTimer[i].finished)
                     {
@@ -256,7 +261,6 @@ void loop()
               uint32_t testTime = micros() + 50000;
               while (micros() < testTime)
               {
-
               }
               digitalWrite(pin, LOW);
               phase = PHASE_READ_SERIAL;
@@ -317,7 +321,6 @@ void execute()
           break;
         }
     }
-
   }
   else if ((currentSerialCommand & PARAMETER_STRING) == PARAMETER_STRING)
   {
@@ -435,12 +438,12 @@ void execute()
   {
     phase = PHASE_READ_SERIAL;
   }
-
 }
 
 void parse(uint8_t data)
 {
-  switch (serialReadPhase) {
+  switch (serialReadPhase)
+  {
     case READ_DATA_PREFIX:
       {
         uint8_t b = data;
@@ -459,7 +462,8 @@ void parse(uint8_t data)
             {
               Log::debug(MESSAGE_SYNC2);
               ++syncCount;
-              if (syncCount == 2) {
+              if (syncCount == 2)
+              {
                 serialReadPhase = READ_COMMAND;
                 syncCount = 0;
               }
