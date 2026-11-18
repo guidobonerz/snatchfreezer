@@ -55,10 +55,6 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install upx -y --no-progress
 
-      - name: Install UPX (macOS)
-        if: runner.os == 'macOS'
-        run: brew install upx
-
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -72,19 +68,15 @@ jobs:
         working-directory: snatchfreezer/frontend
         run: cargo build --release --locked --target ${{ matrix.target }}
 
+      # macOS binaries are not packed: UPX output for Mach-O is unreliable on
+      # current macOS, and re-signing the packed file breaks `upx -t`.
       - name: Pack with UPX
+        if: runner.os != 'macOS'
         working-directory: snatchfreezer/frontend/target/${{ matrix.target }}/release
         run: |
           bin="$BIN_NAME"
           if [ "$RUNNER_OS" = "Windows" ]; then bin="$BIN_NAME.exe"; fi
-          if [ "$RUNNER_OS" = "macOS" ]; then
-            # UPX needs to be forced on macOS, and the packed binary must be
-            # re-signed (ad hoc) or Apple Silicon refuses to start it.
-            upx --best --force-macos "$bin"
-            codesign --force --sign - "$bin"
-          else
-            upx --best "$bin"
-          fi
+          upx --best "$bin"
           upx -t "$bin"
 
       - name: Package
