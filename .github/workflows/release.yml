@@ -1,0 +1,144 @@
+name: Release
+
+# Runs only when a version tag (e.g. v2.0.0) is pushed.
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  BIN_NAME: snatchfreezer
+  # The frontend depends on the drazui UI library via `path = "../../drazui"`,
+  # so it is checked out next to this repository.
+  DRAZUI_REPO: guidobonerz/drazui
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-latest
+            target: x86_64-apple-darwin
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout snatchfreezer
+        uses: actions/checkout@v4
+        with:
+          path: snatchfreezer
+
+      - name: Checkout drazui
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.DRAZUI_REPO }}
+          path: drazui
+          # Only needed if drazui is a private repository.
+          token: ${{ secrets.DRAZUI_TOKEN || github.token }}
+
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add ${{ matrix.target }}
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libudev-dev libx11-dev libxcursor-dev \
+            libxkbcommon-dev libwayland-dev upx-ucl
+
+      - name: Install UPX (Windows)
+        if: runner.os == 'Windows'
+        run: choco install upx -y --no-progress
+
+      - name: Install UPX (macOS)
+        if: runner.os == 'macOS'
+        run: brew install upx
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            snatchfreezer/frontend/target
+          key: cargo-${{ matrix.target }}-${{ hashFiles('snatchfreezer/frontend/Cargo.lock') }}
+
+      - name: Build
+        working-directory: snatchfreezer/frontend
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Pack with UPX
+        working-directory: snatchfreezer/frontend/target/${{ matrix.target }}/release
+        run: |
+          bin="$BIN_NAME"
+          if [ "$RUNNER_OS" = "Windows" ]; then bin="$BIN_NAME.exe"; fi
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            # UPX needs to be forced on macOS, and the packed binary must be
+            # re-signed (ad hoc) or Apple Silicon refuses to start it.
+            upx --best --force-macos "$bin"
+            codesign --force --sign - "$bin"
+          else
+            upx --best "$bin"
+          fi
+          upx -t "$bin"
+
+      - name: Package
+        id: package
+        run: |
+          name="$BIN_NAME-${GITHUB_REF_NAME}-${{ matrix.target }}"
+          release_dir="snatchfreezer/frontend/target/${{ matrix.target }}/release"
+          mkdir dist
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            asset="$name.zip"
+            7z a "dist/$asset" "./$release_dir/$BIN_NAME.exe"
+          else
+            asset="$name.tar.gz"
+            tar -czf "dist/$asset" -C "$release_dir" "$BIN_NAME"
+          fi
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.asset }}
+          path: dist/${{ steps.package.outputs.asset }}
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            ## Running the download
+            - **Linux:** `chmod +x snatchfreezer`
+            - **macOS:** `chmod +x snatchfreezer && xattr -d com.apple.quarantine snatchfreezer`
+            - **Windows:** right click `snatchfreezer.exe` -> Properties -> *Unblock*
+              (or `Unblock-File .\snatchfreezer.exe` in PowerShell)

@@ -9,6 +9,7 @@ use drazui::*;
 use crate::icons;
 use crate::protocol::Timing;
 use crate::serial::{Command, Event};
+use crate::config::Config;
 use crate::settings::*;
 
 pub const WINDOW: (f32, f32) = (1220.0, 768.0);
@@ -41,6 +42,8 @@ const TOGGLE_W: f32 = 32.0;
 const ICON_W: f32 = 26.0;
 const COLUMNS: [(&str, f32); 5] = [("#", 28.0), ("Delay", 64.0), ("Cycle+", 60.0), ("Release", 64.0), ("Cycle+", 60.0)];
 const LOG_LINES: usize = 300;
+/// Edge length of the corner that marks a changed field.
+const DIRTY: f32 = 6.0;
 
 pub fn theme(scale: f32) -> Theme {
     let mut t = Theme::palette(Color::hex(0x4f4d4d), Color::hex(0x403f3e), ORANGE, ORANGE);
@@ -75,14 +78,19 @@ enum FileAction {
 
 pub struct App {
     project: Project,
+    /// The project as it was loaded or saved last: fields that differ from it
+    /// are marked as changed.
+    saved: Project,
     file: Option<PathBuf>,
     /// Siphons that are being flushed (valve open).
     flushing: [bool; VALVES],
     flush_all: bool,
     ports: Vec<String>,
     port: Option<String>,
+    /// The port of the last connection, kept in the configuration.
+    last_port: Option<String>,
     link: Link,
-    /// Connect on start if there is exactly one port.
+    /// Connect on start to the port of the last run, or to the only one.
     auto_connect: bool,
     run: Run,
     transfer: f32,
@@ -94,16 +102,11 @@ pub struct App {
     pending: Option<FileAction>,
     /// Toasts to show: text, is an error.
     messages: Vec<(String, bool)>,
+    /// Quitting was requested with unsaved changes: ask first.
+    ask_quit: bool,
     pub quit: bool,
     tx: Sender<Command>,
     rx: Receiver<Event>,
-}
-
-fn project_dir() -> PathBuf {
-    let home = std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")).unwrap_or_default();
-    let dir = PathBuf::from(home).join(".snatchfreezer");
-    let _ = std::fs::create_dir_all(&dir);
-    dir
 }
 
 /// Draws text in another size than the theme's.
@@ -132,8 +135,30 @@ fn icon_button(ui: &mut Ui, name: &str, enabled: bool, draw: impl FnOnce(&mut Ui
     resp.clicked
 }
 
-/// Looks like the table, but is not editable: for disabled tables.
-fn static_table(ui: &mut Ui, rows: &[Row]) {
+/// The value of table column `c` (1 to 4).
+fn column(t: &Timing, c: usize) -> u32 {
+    match c {
+        1 => t.delay,
+        2 => t.delay_increment,
+        3 => t.release,
+        _ => t.release_increment,
+    }
+}
+
+/// Marks the field in `r` as changed: a corner at its top right.
+fn dirty_mark(ui: &mut Ui, r: Rect, dirty: bool) {
+    if !dirty {
+        return;
+    }
+    let n = DIRTY.min(r.w).min(r.h) as usize;
+    for k in 0..n {
+        ui.fill(Rect::new(r.right() - (n - k) as f32, r.y + k as f32, (n - k) as f32, 1.0), ORANGE);
+    }
+}
+
+/// Looks like the table, but is not editable: for disabled tables. `saved`
+/// are the rows of the saved project.
+fn static_table(ui: &mut Ui, rows: &[Row], saved: &[Row]) {
     let t = ui.theme;
     let rh = t.row_h();
     let r = ui.alloc(vec2(0.0, rh * (rows.len() + 1) as f32 + 2.0));
@@ -150,15 +175,10 @@ fn static_table(ui: &mut Ui, rows: &[Row]) {
             if c == 0 && i % 2 == 1 {
                 ui.fill(Rect::new(inner.x, inner.y + (i + 1) as f32 * rh, inner.w, rh), TABLE_STRIPE);
             }
-            let v = &row.timing;
-            let text = match c {
-                0 => (i + 1).to_string(),
-                1 => v.delay.to_string(),
-                2 => v.delay_increment.to_string(),
-                3 => v.release.to_string(),
-                _ => v.release_increment.to_string(),
-            };
+            let text = if c == 0 { (i + 1).to_string() } else { column(&row.timing, c).to_string() };
             ui.text_in(cell(i + 1), &text, DISABLED, if c == 0 { Align::Left } else { Align::Right });
+            let changed = c > 0 && saved.get(i).is_some_and(|s| column(&s.timing, c) != column(&row.timing, c));
+            dirty_mark(ui, Rect::new(x, inner.y + (i + 1) as f32 * rh, w - 1.0, rh), changed);
         }
         x += w;
     }
@@ -169,11 +189,13 @@ impl App {
     pub fn new(tx: Sender<Command>, rx: Receiver<Event>) -> App {
         App {
             project: Project::default(),
+            saved: Project::default(),
             file: None,
             flushing: [false; VALVES],
             flush_all: false,
             ports: Vec::new(),
             port: None,
+            last_port: None,
             link: Link::Offline,
             auto_connect: true,
             run: Run::Idle,
@@ -184,16 +206,53 @@ impl App {
             tab: 0,
             pending: None,
             messages: Vec::new(),
+            ask_quit: false,
             quit: false,
             tx,
             rx,
         }
     }
 
+    /// Takes over what the last run left: its project file and serial port.
+    pub fn restore(&mut self, config: &Config) {
+        self.last_port = config.port.clone();
+        // a project that was moved or deleted in the meantime is no error
+        let Some(path) = config.project.as_ref().filter(|p| p.is_file()) else { return };
+        match Project::load(path) {
+            Ok(project) => {
+                self.saved = project.clone();
+                self.project = project;
+                self.file = Some(path.clone());
+            }
+            Err(e) => self.error(format!("{}: {e}", path.display())),
+        }
+    }
+
+    /// What the next run should start with. The window is added by the caller.
+    pub fn config(&self) -> Config {
+        Config { project: self.file.clone(), port: self.last_port.clone(), window: None }
+    }
+
+    /// True if the project differs from what was loaded or saved last.
+    fn is_dirty(&self) -> bool {
+        self.project != self.saved
+    }
+
+    /// Quits, but asks first if there are unsaved changes.
+    fn request_quit(&mut self) {
+        if self.is_dirty() {
+            self.ask_quit = true;
+        } else {
+            self.quit = true;
+        }
+    }
+
+    /// Unsaved changes are shown by a `*`.
     pub fn title(&self) -> String {
+        let changed = if self.is_dirty() { " *" } else { "" };
         match self.file.as_ref().and_then(|f| f.file_name()) {
-            Some(name) => format!("Snatchfreezer - {}", name.to_string_lossy()),
-            None => "Snatchfreezer".into(),
+            Some(name) => format!("Snatchfreezer - {}{changed}", name.to_string_lossy()),
+            None => format!("Snatchfreezer{changed}"),
         }
     }
 
@@ -245,12 +304,17 @@ impl App {
             match event {
                 Event::Ports(ports) => {
                     self.ports = ports;
-                    if std::mem::take(&mut self.auto_connect) && self.ports.len() == 1 {
-                        self.connect(self.ports[0].clone());
+                    if std::mem::take(&mut self.auto_connect) {
+                        let last = self.last_port.clone().filter(|p| self.ports.contains(p));
+                        let only = (self.ports.len() == 1).then(|| self.ports[0].clone());
+                        if let Some(port) = last.or(only) {
+                            self.connect(port);
+                        }
                     }
                 }
                 Event::Connected { port } => {
                     self.link = Link::Online;
+                    self.last_port = Some(port.clone());
                     self.port = Some(port);
                     self.run = Run::Idle;
                     self.outputs_off();
@@ -291,11 +355,12 @@ impl App {
     /// Opens the file dialog requested during the frame, if any.
     pub fn after_frame(&mut self) {
         let Some(action) = self.pending.take() else { return };
-        let dialog = || rfd::FileDialog::new().add_filter("SnatchFreezer Settings", &["sf"]).set_directory(project_dir());
+        let dialog = || rfd::FileDialog::new().add_filter("SnatchFreezer Settings", &["sf"]).set_directory(crate::config::dir());
         if let FileAction::Load = action {
             let Some(path) = dialog().pick_file() else { return };
             match Project::load(&path) {
                 Ok(project) => {
+                    self.saved = project.clone();
                     self.project = project;
                     self.info(format!("Loaded {}", path.display()));
                     self.file = Some(path);
@@ -311,6 +376,7 @@ impl App {
         }
         match self.project.save(&path) {
             Ok(()) => {
+                self.saved = self.project.clone();
                 self.info(format!("Saved {}", path.display()));
                 self.file = Some(path);
             }
@@ -365,7 +431,9 @@ impl App {
     /// Starting points only: the right timings depend on the setup.
     fn preset(&mut self, drop_on_drop: bool) {
         let row = |delay, release| Row { timing: Timing { delay, release, ..Timing::default() }, ignore: false };
+        // nothing of a preset is saved yet: all its fields are marked
         self.project = Project::default();
+        self.saved = Project::default();
         self.file = None;
         let c = &mut self.project.channels;
         c[0].description = "Drop".into();
@@ -402,6 +470,13 @@ impl App {
             header(ui, "Control", CONTROL_HEAD);
             self.control(ui);
         });
+        if std::mem::take(&mut self.ask_quit) {
+            ui.open_dialog("quit");
+        }
+        let question = "The project has unsaved changes.\nQuit without saving them?";
+        if ui.confirm("quit", "Unsaved changes", question, &["Quit", "Cancel"]) == Some(0) {
+            self.quit = true;
+        }
     }
 
     fn menus(&mut self, ui: &mut Ui) {
@@ -409,6 +484,7 @@ impl App {
             ui.menu("Application", |ui| {
                 if ui.menu_item("New") {
                     self.project = Project::default();
+                    self.saved = Project::default();
                     self.file = None;
                 }
                 if ui.menu_item("Load") {
@@ -422,7 +498,7 @@ impl App {
                 }
                 ui.separator();
                 if ui.menu_item("Quit") {
-                    self.quit = true;
+                    self.request_quit();
                 }
             });
             ui.menu("Control", |ui| {
@@ -471,6 +547,7 @@ impl App {
         let idle = self.link == Link::Online && self.run == Run::Idle;
         let flushing = i < VALVES && self.flushing[i];
         let ch = &mut self.project.channels[i];
+        let saved = &self.saved.channels[i];
         let (valve, enabled) = (ch.is_valve(), ch.enabled);
         let number = if valve { i + 1 } else { i + 1 - VALVES };
         let (mut toggled, mut flush, mut test) = (false, false, false);
@@ -484,6 +561,7 @@ impl App {
             toggled = ui.interact(ui.id("enabled"), r).clicked;
             let pill = Rect::new(r.x + 2.0, r.y + ((rh - 14.0) / 2.0).round(), 28.0, 14.0);
             icons::toggle(ui, pill, enabled, if enabled { BLUE } else { GREY });
+            dirty_mark(ui, r, enabled != saved.enabled);
 
             let icons_n = if valve { 2.0 } else { 1.0 };
             let w = width - NUMBER_W - TOGGLE_W - icons_n * ICON_W - (icons_n + 2.0) * t.gap;
@@ -495,6 +573,7 @@ impl App {
                 ui.border(r, t.border);
                 ui.text_in(r.inset_xy(t.pad.x, 0.0), &ch.description, DISABLED, Align::Left);
             }
+            dirty_mark(ui, ui.last_rect().inset(1.0), ch.description != saved.description);
 
             let active = enabled && idle;
             if valve {
@@ -525,16 +604,19 @@ impl App {
             ui.h(Size::Px(height)).table("timings", &COLUMNS, rows.len(), &mut None, |ui, r, c| {
                 let v = &mut rows[r].timing;
                 match c {
-                    0 => ui.label(&(r + 1).to_string()),
+                    0 => return ui.label(&(r + 1).to_string()),
                     1 => drop(ui.cell_num(&mut v.delay)),
                     2 => drop(ui.cell_num(&mut v.delay_increment)),
                     3 => drop(ui.cell_num(&mut v.release)),
                     _ => drop(ui.cell_num(&mut v.release_increment)),
                 }
+                // the clip rect is the cell
+                let cell = ui.clip();
+                dirty_mark(ui, cell, column(v, c) != column(&saved.rows[r].timing, c));
             });
             ui.theme = normal;
         } else {
-            static_table(ui, &ch.rows);
+            static_table(ui, &ch.rows, &saved.rows);
         }
         ui.pop_id();
 
@@ -579,10 +661,12 @@ impl App {
 
                 ui.label("Cycles");
                 ui.number("cycles", &mut self.project.cycles, 1);
+                dirty_mark(ui, ui.last_rect().inset(1.0), self.project.cycles != self.saved.cycles);
                 ui.alloc(Vec2::ZERO);
 
                 ui.label("Cycle Delay (ms)");
                 ui.number("cycle delay", &mut self.project.cycle_delay_ms, 500);
+                dirty_mark(ui, ui.last_rect().inset(1.0), self.project.cycle_delay_ms != self.saved.cycle_delay_ms);
                 ui.alloc(Vec2::ZERO);
             });
         });
@@ -633,6 +717,7 @@ impl App {
             });
             if self.tab == 1 {
                 ui.text_area("description", &mut self.project.description);
+                dirty_mark(ui, ui.last_rect().inset(1.0), self.project.description != self.saved.description);
                 return;
             }
             let r = ui.size(Size::Fill, Size::Fill).alloc(Vec2::ZERO);
@@ -663,6 +748,7 @@ mod tests {
 
     /// Builds the whole UI in the states it can be in. With the environment
     /// variable SNATCHFREEZER_SHOT set, the last frame is written there as PPM.
+    /// SNATCHFREEZER_QUIT adds the dialog that asks before quitting.
     #[test]
     fn user_interface_builds() {
         let (tx, commands) = mpsc::channel();
@@ -705,6 +791,11 @@ mod tests {
             assert!(app.run == Run::Idle);
             app.set_flush(1, true);
         }
+        if std::env::var_os("SNATCHFREEZER_QUIT").is_some() {
+            // the dialog that asks about the unsaved changes (sized in its first frame)
+            app.request_quit();
+            frame(&mut app, &mut ui);
+        }
         frame(&mut app, &mut ui);
 
         if let Some(path) = std::env::var_os("SNATCHFREEZER_SHOT") {
@@ -714,6 +805,103 @@ mod tests {
             out.extend(canvas.buf.iter().flat_map(|p| [(p >> 16) as u8, (p >> 8) as u8, *p as u8]));
             std::fs::write(path, out).unwrap();
         }
+    }
+
+    #[test]
+    fn the_last_run_is_restored() {
+        let path = std::env::temp_dir().join(format!("snatchfreezer-{}-restore.sf", std::process::id()));
+        let saved = Project { description: "last".into(), cycles: 4, ..Project::default() };
+        saved.save(&path).unwrap();
+
+        let (tx, commands) = mpsc::channel();
+        let (events, rx) = mpsc::channel();
+        let mut app = App::new(tx, rx);
+        app.restore(&Config { project: Some(path.clone()), port: Some("COM9".into()), window: None });
+        assert!(app.project == saved && app.file.as_ref() == Some(&path));
+        let _ = std::fs::remove_file(&path);
+
+        // the port of the last run wins over the other ones
+        events.send(Event::Ports(vec!["COM7".into(), "COM9".into()])).unwrap();
+        app.update();
+        assert!(matches!(commands.try_recv(), Ok(Command::Connect(p)) if p == "COM9"));
+
+        // a new connection replaces it in the configuration
+        events.send(Event::Connected { port: "COM7".into() }).unwrap();
+        events.send(Event::Disconnected(String::new())).unwrap();
+        app.update();
+        assert_eq!(app.config(), Config { project: Some(path), port: Some("COM7".into()), window: None });
+    }
+
+    #[test]
+    fn a_missing_project_or_port_of_the_last_run_is_ignored() {
+        let (tx, commands) = mpsc::channel();
+        let (events, rx) = mpsc::channel();
+        let mut app = App::new(tx, rx);
+        let gone = std::env::temp_dir().join("snatchfreezer-does-not-exist.sf");
+        app.restore(&Config { project: Some(gone), port: Some("COM9".into()), window: None });
+        assert!(app.project == Project::default() && app.file.is_none() && app.messages.is_empty());
+        events.send(Event::Ports(vec!["COM7".into(), "COM8".into()])).unwrap();
+        app.update();
+        assert!(commands.try_recv().is_err());
+    }
+
+    #[test]
+    fn changes_are_dirty_until_they_are_saved_or_undone() {
+        let (tx, _commands) = mpsc::channel();
+        let (_events, rx) = mpsc::channel();
+        let mut app = App::new(tx, rx);
+        assert!(!app.is_dirty() && app.title() == "Snatchfreezer");
+
+        app.project.cycles = 5;
+        assert!(app.is_dirty() && app.title() == "Snatchfreezer *");
+        // back to the saved value is not a change
+        app.project.cycles = 1;
+        assert!(!app.is_dirty());
+
+        // saving makes the current state the clean one
+        app.project.channels[2].rows[1].timing.delay = 7;
+        let path = std::env::temp_dir().join(format!("snatchfreezer-{}-dirty.sf", std::process::id()));
+        app.file = Some(path.clone());
+        app.pending = Some(FileAction::Save);
+        app.after_frame();
+        let _ = std::fs::remove_file(&path);
+        assert!(!app.is_dirty() && !app.title().ends_with('*'));
+        app.project.channels[2].enabled = false;
+        assert!(app.is_dirty() && app.title().ends_with(".sf *"));
+
+        // a preset is unsaved as a whole
+        app.preset(false);
+        assert!(app.is_dirty() && app.title() == "Snatchfreezer *");
+    }
+
+    #[test]
+    fn quitting_with_unsaved_changes_has_to_be_confirmed() {
+        let frame = |app: &mut App, ui: &mut Ui, key: Option<Key>| {
+            ui.input.keys.extend(key);
+            ui.begin(WINDOW.0, WINDOW.1);
+            app.build(ui);
+            ui.end();
+        };
+        for (key, quits) in [(Key::Enter, true), (Key::Escape, false)] {
+            let (tx, _commands) = mpsc::channel();
+            let (_events, rx) = mpsc::channel();
+            let mut app = App::new(tx, rx);
+            let mut ui = Ui::new();
+            app.project.cycles = 3;
+            app.request_quit();
+            frame(&mut app, &mut ui, None);
+            frame(&mut app, &mut ui, None);
+            assert!(!app.quit && ui.dialog_open());
+            frame(&mut app, &mut ui, Some(key));
+            assert!(app.quit == quits && !ui.dialog_open());
+        }
+
+        // nothing to ask without changes
+        let (tx, _commands) = mpsc::channel();
+        let (_events, rx) = mpsc::channel();
+        let mut app = App::new(tx, rx);
+        app.request_quit();
+        assert!(app.quit);
     }
 
     #[test]
