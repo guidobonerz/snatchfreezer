@@ -1,548 +1,556 @@
-#include "Constants.h"
-#include "Log.h"
-#include "NumberConverter.h"
+// Snatchfreezer controller for Arduino Nano (ATmega328).
+//
+// The frontend uploads a program (one action per enabled table), then starts
+// it. The main loop never blocks: serial input is parsed byte by byte and all
+// timing is done by comparing elapsed time, so it is safe against the
+// micros() / millis() overflow.
+//
+// No watchdog on purpose: the old Nano bootloader (cpu=atmega328old) does not
+// switch it off after a watchdog reset and would hang in a reset loop.
+
 #include "Arduino.h"
-#include "SerialHelper.h"
+#include "Protocol.h"
 
-#define arraySize(x) (sizeof(x) / sizeof((x)[0]))
+// ---- program ---------------------------------------------------------------
 
-struct ActionTimer
+struct Timing
 {
-  bool started = false;
-  bool finished = false;
-  uint8_t pin = 0;
-  uint8_t timerCount = 0;
-  uint8_t maxTimerCount = 0;
-  uint32_t targetTime = 0;
-  uint32_t delayStartTime[5] = {0, 0, 0, 0, 0};
-  uint32_t releaseStartTime[5] = {0, 0, 0, 0, 0};
-  uint32_t delayCycleIncrement[5] = {0, 0, 0, 0, 0};
-  uint32_t releaseCycleIncrement[5] = {0, 0, 0, 0, 0};
-} actionTimer[10];
+  uint32_t delay;
+  uint32_t release;
+  uint32_t delayIncrement;
+  uint32_t releaseIncrement;
+};
 
-uint8_t readDataBuffer[100];
-uint8_t currentSerialCommand = 0;
-uint8_t syncCount = 0;
-uint8_t maxActionCount = 0;
-uint8_t currentActionCount = 0;
-uint8_t maxCycleCount = 0;
-uint8_t currentCycleCount = 0;
-uint8_t calculatedChecksum = 0;
-uint8_t retries = 0;
-uint8_t currentRow = 0;
-uint32_t cycleDelayTime = 0;
-uint32_t targetCycleDelayTime = 0;
-uint32_t inc = 0;
+enum ActionState : uint8_t
+{
+  WAITING, // output low, waiting for the delay to pass
+  ACTIVE,  // output high, waiting for the release time to pass
+  DONE
+};
 
-uint32_t runMode = 0;
+struct Action
+{
+  uint8_t pin;
+  uint8_t count;
+  Timing timings[MAX_TIMINGS];
+  // while running
+  uint8_t index;
+  ActionState state;
+  uint32_t mark; // start of the current step
+  uint32_t wait; // length of the current step
+};
 
-int phase;
-int serialReadPhase;
-int completeCount = 0;
-int dataIndex = 0;
-int dataLength = 0;
+Action actions[MAX_ACTIONS];
+uint8_t actionCount = 0;
+uint16_t cycles = 1;
+uint32_t cycleDelayMs = 0;
 
-bool runProgram = false;
-bool nextCycle = true;
-bool canceled = false;
-bool pause = false;
+enum RunState : uint8_t
+{
+  IDLE,
+  CYCLE,      // actions are being executed
+  CYCLE_PAUSE // waiting for the cycle delay
+};
+
+RunState runState = IDLE;
+uint16_t cycle = 0;
+uint8_t remaining = 0;
+uint32_t pauseStart = 0;
+
+// manual control, one bit per pin
+uint16_t flushMask = 0;
+uint16_t testMask = 0;
+uint32_t testStart[MAX_ACTIONS];
+
+// ---- serial ----------------------------------------------------------------
+
+enum ParseState : uint8_t
+{
+  P_SYNC1,
+  P_SYNC2,
+  P_CMD,
+  P_SEQ,
+  P_LEN,
+  P_PAYLOAD,
+  P_CRC
+};
+
+ParseState parseState = P_SYNC1;
+uint8_t rxCmd = 0;
+uint8_t rxSeq = 0;
+uint8_t rxLen = 0;
+uint8_t rxIndex = 0;
+uint8_t rxCrc = 0;
+uint8_t rxPayload[MAX_PAYLOAD];
+uint32_t lastByteMs = 0;
+
+// last answered request, to answer a repeated one without executing it again
+uint8_t lastSeq = 0;
+uint8_t lastCmd = 0;
+uint8_t lastError = 0;
+
+uint8_t crc8(uint8_t crc, uint8_t data)
+{
+  crc ^= data;
+  for (uint8_t i = 0; i < 8; i++)
+  {
+    crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0x07) : (uint8_t)(crc << 1);
+  }
+  return crc;
+}
+
+void sendFrame(uint8_t cmd, uint8_t seq, const uint8_t *payload, uint8_t length)
+{
+  uint8_t frame[5 + MAX_PAYLOAD + 1];
+  frame[0] = SYNC1;
+  frame[1] = SYNC2;
+  frame[2] = cmd;
+  frame[3] = seq;
+  frame[4] = length;
+  uint8_t crc = crc8(crc8(crc8(0, cmd), seq), length);
+  for (uint8_t i = 0; i < length; i++)
+  {
+    frame[5 + i] = payload[i];
+    crc = crc8(crc, payload[i]);
+  }
+  frame[5 + length] = crc;
+  Serial.write(frame, 6 + length);
+}
+
+void sendReply(uint8_t seq, uint8_t error)
+{
+  if (error == 0)
+  {
+    sendFrame(CMD_ACK, seq, NULL, 0);
+  }
+  else
+  {
+    sendFrame(CMD_NAK, seq, &error, 1);
+  }
+}
+
+void sendHello(uint8_t seq)
+{
+  const uint8_t payload[3] = {PROTOCOL_VERSION, FIRMWARE_MAJOR, FIRMWARE_MINOR};
+  sendFrame(CMD_HELLO_REPLY, seq, payload, 3);
+}
+
+uint16_t readU16(const uint8_t *p)
+{
+  return (uint16_t)p[0] | ((uint16_t)p[1] << 8);
+}
+
+uint32_t readU32(const uint8_t *p)
+{
+  return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+}
+
+// ---- outputs ---------------------------------------------------------------
+
+bool validPin(uint8_t pin)
+{
+  return pin >= FIRST_OUTPUT_PIN && pin <= LAST_OUTPUT_PIN;
+}
+
+uint16_t pinBit(uint8_t pin)
+{
+  return (uint16_t)1 << (pin - FIRST_OUTPUT_PIN);
+}
+
+void allOff()
+{
+  for (uint8_t pin = FIRST_OUTPUT_PIN; pin <= LAST_OUTPUT_PIN; pin++)
+  {
+    digitalWrite(pin, LOW);
+  }
+  digitalWrite(ACTIVE_PIN, LOW);
+  flushMask = 0;
+  testMask = 0;
+}
+
+void updateTestPulses(uint32_t now)
+{
+  if (testMask == 0)
+  {
+    return;
+  }
+  for (uint8_t i = 0; i < MAX_ACTIONS; i++)
+  {
+    uint16_t bit = (uint16_t)1 << i;
+    if ((testMask & bit) && (uint32_t)(now - testStart[i]) >= TEST_PULSE_US)
+    {
+      testMask &= ~bit;
+      // a siphon that is being flushed stays open
+      digitalWrite(FIRST_OUTPUT_PIN + i, (flushMask & bit) ? HIGH : LOW);
+    }
+  }
+}
+
+// ---- running ---------------------------------------------------------------
+
+void finish(uint8_t status)
+{
+  allOff();
+  runState = IDLE;
+  sendFrame(CMD_FINISHED, 0, &status, 1);
+}
+
+void startCycle()
+{
+  uint8_t payload[4] = {(uint8_t)(cycle + 1), (uint8_t)((cycle + 1) >> 8), (uint8_t)cycles, (uint8_t)(cycles >> 8)};
+  sendFrame(CMD_CYCLE, 0, payload, 4);
+  // nothing is left to transmit while the actions are timed
+  Serial.flush();
+
+  remaining = actionCount;
+  runState = CYCLE;
+  uint32_t now = micros();
+  for (uint8_t i = 0; i < actionCount; i++)
+  {
+    Action &a = actions[i];
+    a.index = 0;
+    a.state = WAITING;
+    a.mark = now;
+    a.wait = a.timings[0].delay + a.timings[0].delayIncrement * cycle;
+  }
+}
+
+// Steps are chained from the scheduled time of the previous step, not from
+// the time it was noticed, so the loop duration does not add up.
+void updateAction(Action &a, uint32_t now)
+{
+  while (a.state != DONE && (uint32_t)(now - a.mark) >= a.wait)
+  {
+    a.mark += a.wait;
+    if (a.state == WAITING)
+    {
+      const Timing &t = a.timings[a.index];
+      a.wait = t.release + t.releaseIncrement * cycle;
+      if (a.wait > 0)
+      {
+        digitalWrite(a.pin, HIGH);
+        a.state = ACTIVE;
+        continue;
+      }
+    }
+    else
+    {
+      digitalWrite(a.pin, LOW);
+    }
+    a.index++;
+    if (a.index >= a.count)
+    {
+      a.state = DONE;
+      remaining--;
+    }
+    else
+    {
+      a.state = WAITING;
+      a.wait = a.timings[a.index].delay + a.timings[a.index].delayIncrement * cycle;
+    }
+  }
+}
+
+void updateRun()
+{
+  if (runState == CYCLE)
+  {
+    uint32_t now = micros();
+    for (uint8_t i = 0; i < actionCount; i++)
+    {
+      updateAction(actions[i], now);
+    }
+    if (remaining == 0)
+    {
+      cycle++;
+      if (cycle >= cycles)
+      {
+        finish(FINISHED_DONE);
+      }
+      else
+      {
+        runState = CYCLE_PAUSE;
+        pauseStart = millis();
+      }
+    }
+  }
+  else if (runState == CYCLE_PAUSE && (uint32_t)(millis() - pauseStart) >= cycleDelayMs)
+  {
+    startCycle();
+  }
+}
+
+// ---- commands --------------------------------------------------------------
+
+// Returns 0 or an error code.
+uint8_t execute(uint8_t cmd, const uint8_t *p, uint8_t length)
+{
+  uint8_t expected;
+  switch (cmd)
+  {
+  case CMD_BEGIN:
+    expected = 6;
+    break;
+  case CMD_ACTION:
+  case CMD_TEST:
+    expected = 1;
+    break;
+  case CMD_TIMING:
+    expected = 16;
+    break;
+  case CMD_FLUSH:
+    expected = 2;
+    break;
+  case CMD_RUN:
+  case CMD_CANCEL:
+    expected = 0;
+    break;
+  default:
+    return ERR_UNKNOWN_COMMAND;
+  }
+  if (length != expected)
+  {
+    return ERR_BAD_LENGTH;
+  }
+
+  if (cmd == CMD_CANCEL)
+  {
+    if (runState != IDLE)
+    {
+      finish(FINISHED_CANCELED);
+    }
+    else
+    {
+      allOff();
+    }
+    return 0;
+  }
+  if (runState != IDLE)
+  {
+    return ERR_BUSY;
+  }
+
+  switch (cmd)
+  {
+  case CMD_BEGIN:
+  {
+    if (readU16(p) == 0)
+    {
+      return ERR_BAD_VALUE;
+    }
+    cycles = readU16(p);
+    cycleDelayMs = readU32(p + 2);
+    actionCount = 0;
+    return 0;
+  }
+  case CMD_ACTION:
+  {
+    if (!validPin(p[0]))
+    {
+      return ERR_BAD_PIN;
+    }
+    if (actionCount >= MAX_ACTIONS)
+    {
+      return ERR_TOO_MANY_ACTIONS;
+    }
+    actions[actionCount].pin = p[0];
+    actions[actionCount].count = 0;
+    actionCount++;
+    return 0;
+  }
+  case CMD_TIMING:
+  {
+    if (actionCount == 0)
+    {
+      return ERR_NO_ACTION;
+    }
+    Action &a = actions[actionCount - 1];
+    if (a.count >= MAX_TIMINGS)
+    {
+      return ERR_TOO_MANY_TIMINGS;
+    }
+    Timing &t = a.timings[a.count++];
+    t.delay = readU32(p);
+    t.release = readU32(p + 4);
+    t.delayIncrement = readU32(p + 8);
+    t.releaseIncrement = readU32(p + 12);
+    return 0;
+  }
+  case CMD_RUN:
+  {
+    if (actionCount == 0)
+    {
+      return ERR_NO_ACTION;
+    }
+    for (uint8_t i = 0; i < actionCount; i++)
+    {
+      if (actions[i].count == 0)
+      {
+        return ERR_NO_ACTION;
+      }
+    }
+    allOff();
+    digitalWrite(ACTIVE_PIN, HIGH);
+    cycle = 0;
+    // startCycle() is called from the main loop after the ACK was sent
+    runState = CYCLE_PAUSE;
+    pauseStart = millis() - cycleDelayMs;
+    return 0;
+  }
+  case CMD_TEST:
+  {
+    if (!validPin(p[0]))
+    {
+      return ERR_BAD_PIN;
+    }
+    testStart[p[0] - FIRST_OUTPUT_PIN] = micros();
+    testMask |= pinBit(p[0]);
+    digitalWrite(p[0], HIGH);
+    return 0;
+  }
+  case CMD_FLUSH:
+  {
+    if (!validPin(p[0]))
+    {
+      return ERR_BAD_PIN;
+    }
+    if (p[1])
+    {
+      flushMask |= pinBit(p[0]);
+      digitalWrite(p[0], HIGH);
+    }
+    else
+    {
+      flushMask &= ~pinBit(p[0]);
+      if (!(testMask & pinBit(p[0])))
+      {
+        digitalWrite(p[0], LOW);
+      }
+    }
+    return 0;
+  }
+  }
+  return ERR_UNKNOWN_COMMAND;
+}
+
+void handleFrame()
+{
+  if (rxCmd == CMD_HELLO)
+  {
+    sendHello(rxSeq);
+  }
+  else
+  {
+    if (rxSeq != lastSeq || rxCmd != lastCmd)
+    {
+      lastError = execute(rxCmd, rxPayload, rxLen);
+    }
+    sendReply(rxSeq, lastError);
+  }
+  lastSeq = rxSeq;
+  lastCmd = rxCmd;
+}
+
+void parse(uint8_t b)
+{
+  switch (parseState)
+  {
+  case P_SYNC1:
+    if (b == SYNC1)
+    {
+      parseState = P_SYNC2;
+    }
+    break;
+  case P_SYNC2:
+    if (b == SYNC2)
+    {
+      parseState = P_CMD;
+    }
+    else if (b != SYNC1)
+    {
+      parseState = P_SYNC1;
+    }
+    break;
+  case P_CMD:
+    rxCmd = b;
+    rxCrc = crc8(0, b);
+    parseState = P_SEQ;
+    break;
+  case P_SEQ:
+    rxSeq = b;
+    rxCrc = crc8(rxCrc, b);
+    parseState = P_LEN;
+    break;
+  case P_LEN:
+    rxLen = b;
+    rxIndex = 0;
+    rxCrc = crc8(rxCrc, b);
+    if (b > MAX_PAYLOAD)
+    {
+      // not a frame of ours, look for the next sync
+      parseState = P_SYNC1;
+    }
+    else
+    {
+      parseState = b > 0 ? P_PAYLOAD : P_CRC;
+    }
+    break;
+  case P_PAYLOAD:
+    rxPayload[rxIndex++] = b;
+    rxCrc = crc8(rxCrc, b);
+    if (rxIndex >= rxLen)
+    {
+      parseState = P_CRC;
+    }
+    break;
+  case P_CRC:
+    parseState = P_SYNC1;
+    if (b == rxCrc)
+    {
+      handleFrame();
+    }
+    else
+    {
+      // the sequence number may be damaged as well, so it is not remembered
+      sendReply(rxSeq, ERR_CRC);
+    }
+    break;
+  }
+}
+
+void readSerial()
+{
+  if (parseState != P_SYNC1 && (uint32_t)(millis() - lastByteMs) > FRAME_TIMEOUT_MS)
+  {
+    parseState = P_SYNC1;
+  }
+  while (Serial.available() > 0)
+  {
+    parse((uint8_t)Serial.read());
+    lastByteMs = millis();
+  }
+}
+
+// ---- main ------------------------------------------------------------------
 
 void setup()
 {
+  // outputs first, so nothing floats or stays open after a reset
+  for (uint8_t pin = FIRST_OUTPUT_PIN; pin <= LAST_OUTPUT_PIN; pin++)
+  {
+    digitalWrite(pin, LOW);
+    pinMode(pin, OUTPUT);
+  }
+  digitalWrite(ACTIVE_PIN, LOW);
+  pinMode(ACTIVE_PIN, OUTPUT);
+
   Serial.begin(19200, SERIAL_8N1);
-  pinMode(ACTIVE_PIN, OUTPUT); //ControlLED
-  //pinMode(2, OUTPUT);
-
-  serialReadPhase = READ_DATA_PREFIX;
-  phase = PHASE_READ_SERIAL;
-  //phase = PHASE_HELLO;
-  dataIndex = 0;
-  dataLength = 0;
-  reset();
-}
-
-void clearActions()
-{
-  currentActionCount = 0;
-  completeCount = 0;
-  for (uint8_t i = 0; i < arraySize(actionTimer); i++)
-  {
-    actionTimer[i].timerCount = 0;
-    actionTimer[i].targetTime = 0;
-    actionTimer[i].finished = false;
-    actionTimer[i].started = false;
-  }
-}
-
-void resetStartTime()
-{
-  uint32_t startMillis = micros();
-  for (uint8_t i = 0; i < arraySize(actionTimer); i++)
-  {
-    actionTimer[i].targetTime = startMillis + actionTimer[i].delayStartTime[0];
-  }
-}
-
-void clearSerial()
-{
-  while (Serial.read() != -1)
-  {
-  };
-}
-
-void reset()
-{
-  clearSerial();
-  clearActions();
-  maxActionCount = 0;
-  currentCycleCount = 0;
-  retries = 0;
-  pause = false;
-  runProgram = false;
-  nextCycle = false;
-}
-
-void addAction()
-{
-  currentActionCount++;
-  maxActionCount = currentActionCount;
-  Log::info(MESSAGE_MAX_ACTION_COUNT);
-}
-
-void setActionPin(uint8_t pin)
-{
-  actionTimer[currentActionCount - 1].pin = pin;
-  pinMode(pin, OUTPUT);
-}
-
-void addActionTimings()
-{
-  actionTimer[currentActionCount - 1].timerCount++;
-  actionTimer[currentActionCount - 1].maxTimerCount = actionTimer[currentActionCount - 1].timerCount;
-}
-void setDelayTime(uint32_t delayTime)
-{
-  actionTimer[currentActionCount - 1].delayStartTime[actionTimer[currentActionCount - 1].timerCount - 1] = delayTime;
-}
-
-void setReleaseTime(uint32_t releaseTime)
-{
-  actionTimer[currentActionCount - 1].releaseStartTime[actionTimer[currentActionCount - 1].timerCount - 1] = releaseTime;
-}
-
-void setStartDelayIncrementTime(uint32_t delayCycleIncrement)
-{
-  actionTimer[currentActionCount - 1].delayCycleIncrement[actionTimer[currentActionCount - 1].timerCount - 1] = delayCycleIncrement;
-}
-
-void setReleaseDelayIncrementTime(uint32_t releaseCycleIncrement)
-{
-  actionTimer[currentActionCount - 1].releaseCycleIncrement[actionTimer[currentActionCount - 1].timerCount - 1] = releaseCycleIncrement;
-}
-void setCycleCount(uint8_t cycleCount)
-{
-  maxCycleCount = cycleCount;
-}
-
-void setCycleDelay(uint32_t cycleDelay)
-{
-  cycleDelayTime = cycleDelay;
+  sendHello(0);
 }
 
 void loop()
 {
-  switch (phase)
-  {
-    case PHASE_HELLO:
-      {
-        if (Serial)
-        {
-          Log::echo("HELLO_SNATCHFREEZER");
-          phase = PHASE_READ_SERIAL;
-        }
-        break;
-      }
-    case PHASE_READ_SERIAL:
-      {
-        if (Serial && Serial.available() != 0)
-        {
-          delay(1);
-          uint8_t b = (uint8_t)Serial.read();
-          parse(b);
-        }
-        break;
-      }
-    case PHASE_EXECUTE_COMMAND:
-      {
-        execute();
-        break;
-      }
-    case PHASE_RUN_PROGRAM:
-      {
-        switch ((runMode & 0xff))
-        {
-          case SHOT:
-            {
-              if (millis() >= targetCycleDelayTime)
-              {
-                if (!nextCycle)
-                {
-                  SerialHelper::setCycleCount(currentCycleCount + 1);
-                  nextCycle = true;
-                  currentActionCount = 0;
-                  completeCount = 0;
-                  clearActions();
-                  resetStartTime();
-                  digitalWrite(ACTIVE_PIN, HIGH);
-                }
-                else
-                {
-                  //-------------------------------------------------------
-                  for (int i = 0; i < maxActionCount; i++)
-                  {
-
-                    if (!actionTimer[i].finished)
-                    {
-                      uint32_t ns = micros();
-                      uint8_t currentActionTimerCount = actionTimer[i].timerCount;
-                      if (!actionTimer[i].started && ns >= actionTimer[i].targetTime)
-                      {
-                        actionTimer[i].started = true;
-                        inc = actionTimer[i].releaseCycleIncrement[currentActionTimerCount] * currentCycleCount;
-                        actionTimer[i].targetTime = ns + actionTimer[i].releaseStartTime[currentActionTimerCount] + inc;
-
-                        digitalWrite(actionTimer[i].pin, HIGH);
-                      }
-
-                      if (actionTimer[i].started && ns >= actionTimer[i].targetTime)
-                      {
-                        digitalWrite(actionTimer[i].pin, LOW);
-                        actionTimer[i].started = false;
-                        inc = actionTimer[i].delayCycleIncrement[currentActionTimerCount] * currentCycleCount;
-                        actionTimer[i].targetTime = ns + actionTimer[i].delayStartTime[currentActionTimerCount] + inc;
-                        if (currentActionTimerCount < actionTimer[i].maxTimerCount - 1)
-                        {
-                          actionTimer[i].timerCount++;
-                        }
-                        else
-                        {
-                          actionTimer[i].finished = true;
-                          completeCount++;
-                        }
-                      }
-                    }
-                  }
-
-                  if (completeCount > maxActionCount - 1)
-                  {
-                    targetCycleDelayTime = millis() + cycleDelayTime;
-                    nextCycle = false;
-                    completeCount = 0;
-                    currentCycleCount++;
-                  }
-                  //-------------------------------------------------------
-                }
-              }
-
-              if (currentCycleCount >= maxCycleCount)
-              {
-                currentCycleCount = 0;
-                digitalWrite(ACTIVE_PIN, LOW);
-                SerialHelper::finished();
-                phase = PHASE_READ_SERIAL;
-              }
-              break;
-            }
-          case TEST:
-            {
-              uint8_t pin = (runMode >> 8) & 0xff;
-              pinMode(pin, OUTPUT);
-              digitalWrite(pin, HIGH);
-              uint32_t testTime = micros() + 50000;
-              while (micros() < testTime)
-              {
-              }
-              digitalWrite(pin, LOW);
-              phase = PHASE_READ_SERIAL;
-              break;
-            }
-          case FLUSH_ON:
-            {
-              uint8_t pin = (runMode >> 8) & 0xff;
-              pinMode(pin, OUTPUT);
-              digitalWrite(pin, HIGH);
-              phase = PHASE_READ_SERIAL;
-              break;
-            }
-          case FLUSH_OFF:
-            {
-              uint8_t pin = (runMode >> 8) & 0xff;
-              pinMode(pin, OUTPUT);
-              digitalWrite(pin, LOW);
-              phase = PHASE_READ_SERIAL;
-              break;
-            }
-          case HELO:
-            {
-              Log::echo("HELLO_SNATCHFREEZER");
-              phase = PHASE_READ_SERIAL;
-              break;
-            }
-        }
-      }
-  }
-}
-
-void execute()
-{
-  String s = String("");
-  uint32_t value = 0;
-  if ((currentSerialCommand & PARAMETER_NUMBER) == PARAMETER_NUMBER)
-  {
-    Log::debug(MESSAGE_NUMBER_PARAMETER);
-    switch (dataLength)
-    {
-      case BYTE:
-        {
-          value = NumberConverter::getUInt8(readDataBuffer, 0);
-          Log::debug(MESSAGE_BYTE);
-          break;
-        }
-      case WORD:
-        {
-          value = NumberConverter::getUInt16(readDataBuffer, 0);
-          Log::debug(MESSAGE_WORD);
-          break;
-        }
-      case DWORD:
-        {
-          value = NumberConverter::getUInt32(readDataBuffer, 0);
-          Log::debug(MESSAGE_DWORD);
-          break;
-        }
-    }
-  }
-  else if ((currentSerialCommand & PARAMETER_STRING) == PARAMETER_STRING)
-  {
-    for (int i = 0; i < dataLength; i++)
-    {
-      s += (char)readDataBuffer[i];
-    }
-    Log::debug(MESSAGE_STRING_PARAMETER);
-  }
-  else if ((currentSerialCommand & PARAMETER_NO) == PARAMETER_NO)
-  {
-    Log::debug(MESSAGE_NO_PARAMETER);
-  }
-
-  switch (currentSerialCommand)
-  {
-
-    case COMMAND_RUN:
-      {
-        Log::info(MESSAGE_RUN);
-        runProgram = true;
-        runMode = value;
-        break;
-      }
-    case COMMAND_RESET:
-      {
-        Log::info(MESSAGE_RESET);
-        reset();
-        break;
-      }
-    case COMMAND_CANCEL:
-      {
-        Log::info(MESSAGE_CANCEL);
-        canceled = true;
-        break;
-      }
-    case COMMAND_ECHO:
-      {
-        Log::info(MESSAGE_ECHO);
-        Log::echo(s);
-        break;
-      }
-    case COMMAND_SET_LOG_LEVEL:
-      {
-        Log::info(MESSAGE_SET_LOG_LEVEL);
-        Log::setLogLevel(value);
-        break;
-      }
-    case COMMAND_ADD_ACTION:
-      {
-        Log::info(MESSAGE_ADD_ACTION);
-        addAction();
-        break;
-      }
-    case COMMAND_SET_ACTION_PIN:
-      {
-        Log::info(MESSAGE_SET_ACTION_PIN);
-        setActionPin(value);
-        break;
-      }
-    case COMMAND_ADD_ACTION_TIMINGS:
-      {
-        Log::info(MESSAGE_ADD_ACTION_TIMIMGS);
-        addActionTimings();
-        break;
-      }
-    case COMMAND_SET_ACTION_DELAY_TIME:
-      {
-        Log::info(MESSAGE_SET_ACTION_DELAY);
-        setDelayTime(value);
-        break;
-      }
-    case COMMAND_SET_ACTION_DELAY_INCREMENT_TIME:
-      {
-        Log::info(MESSAGE_SET_ACTION_DELAY_INCREMENT);
-        setStartDelayIncrementTime(value);
-        break;
-      }
-    case COMMAND_SET_ACTION_RELEASE_TIME:
-      {
-        Log::info(MESSAGE_SET_ACTION_RELEASE);
-        setReleaseTime(value);
-        break;
-      }
-    case COMMAND_SET_ACTION_RELEASE_INCREMENT_TIME:
-      {
-        Log::info(MESSAGE_SET_ACTION_RELEASE_INCREMENT);
-        setReleaseDelayIncrementTime(value);
-        break;
-      }
-    case COMMAND_SET_CYCLE_COUNT:
-      {
-        Log::info(MESSAGE_SET_CYCLE_COUNT);
-        setCycleCount(value);
-        break;
-      }
-    case COMMAND_SET_CYCLE_DELAY:
-      {
-        Log::info(MESSAGE_SET_CYCLE_DELAY);
-        setCycleDelay(value);
-        break;
-      }
-  }
-
-  SerialHelper::sendNextCommand();
-  serialReadPhase = READ_DATA_PREFIX;
-  if (runProgram)
-  {
-    phase = PHASE_RUN_PROGRAM;
-    runProgram = false;
-    clearActions();
-    resetStartTime();
-  }
-  else
-  {
-    phase = PHASE_READ_SERIAL;
-  }
-}
-
-void parse(uint8_t data)
-{
-  switch (serialReadPhase)
-  {
-    case READ_DATA_PREFIX:
-      {
-        uint8_t b = data;
-        calculatedChecksum ^= b;
-
-        switch (b)
-        {
-          case SYNCBYTE1:
-            {
-              serialReadPhase = READ_DATA_PREFIX;
-              Log::debug(MESSAGE_SYNC1);
-              ++syncCount;
-              break;
-            }
-          case SYNCBYTE2:
-            {
-              Log::debug(MESSAGE_SYNC2);
-              ++syncCount;
-              if (syncCount == 2)
-              {
-                serialReadPhase = READ_COMMAND;
-                syncCount = 0;
-              }
-              break;
-            }
-        }
-        break;
-      }
-
-    case READ_COMMAND:
-      {
-        Log::debug(MESSAGE_READ_COMMAND);
-        currentSerialCommand = data;
-        calculatedChecksum ^= (uint8_t)currentSerialCommand;
-        dataLength = 0;
-        dataIndex = 0;
-        serialReadPhase = READ_LENGTH;
-        switch (currentSerialCommand)
-        {
-          case COMMAND_ADD_ACTION:
-          case COMMAND_ADD_ACTION_TIMINGS:
-          // case COMMAND_RUN:
-          case COMMAND_RESET:
-          case COMMAND_CANCEL:
-          case COMMAND_FINISHED:
-          case COMMAND_NEXT:
-          case COMMAND_REPEAT:
-            {
-              serialReadPhase = READ_DATA;
-              break;
-            }
-        }
-        break;
-      }
-    case READ_LENGTH:
-      {
-        Log::debug(MESSAGE_READ_LENGTH);
-        dataLength = data;
-        dataIndex = 0;
-        calculatedChecksum ^= (uint8_t)dataLength;
-        serialReadPhase = READ_DATA;
-        break;
-      }
-    case READ_DATA:
-      {
-        serialReadPhase = READ_DATA;
-        if (dataIndex < dataLength)
-        {
-          Log::debug(MESSAGE_READ_DATA);
-          uint8_t b = data;
-          calculatedChecksum ^= b;
-          readDataBuffer[dataIndex++] = b;
-        }
-        else
-        {
-          if (retries < 3)
-          {
-            Log::debug(MESSAGE_READ_CHECKSUM);
-
-            if (data != calculatedChecksum)
-            {
-              Log::error(MESSAGE_CHECKSUM_ERROR);
-              retries++;
-              SerialHelper::repeatCommand();
-            }
-            else
-            {
-              Log::debug(MESSAGE_CHECKSUM_OK);
-              retries = 0;
-              calculatedChecksum = 0;
-              phase = PHASE_EXECUTE_COMMAND;
-            }
-          }
-          else
-          {
-            SerialHelper::cancel();
-          }
-        }
-        break;
-      }
-  }
+  readSerial();
+  updateRun();
+  updateTestPulses(micros());
 }

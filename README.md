@@ -4,7 +4,7 @@ SnatchFreezer is a project for Highspeed photography
 Runs on Windows, Mac and Linux
 
 This project also contains all required software and PCB layouts including:
-- JavaFX - Controller Frontend
+- Rust - Controller Frontend (`frontend`, replaces the JavaFX one in `SnatchFreezer`)
 - Arduino Sketch
 - Eagle PCB
 
@@ -32,7 +32,19 @@ Future plans:
 - Android Client
 
 
-# Build Java Application
+# Build the Frontend
+The frontend uses the drazui UI library, which is expected next to this repository (`../drazui`).
+
+```
+cd frontend
+cargo run --release
+```
+
+# Controller Firmware
+Flash `arduino/Snatchfreezer` to the Arduino Nano. Frontend and firmware must match: the Rust frontend needs firmware 2.x,
+the serial protocol is described in `arduino/Snatchfreezer/Protocol.h`.
+
+# Build the old Java Application
 mvn jfx:jar
 
 
