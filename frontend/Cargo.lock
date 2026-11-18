@@ -348,6 +348,7 @@ checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 [[package]]
 name = "drazui"
 version = "0.1.0"
+source = "git+https://github.com/guidobonerz/drazui#832471c96103a8fc35cb95adf3aad6ad4f75ed39"
 dependencies = [
  "font8x8",
  "fontdue",

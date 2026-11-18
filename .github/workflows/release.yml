@@ -12,9 +12,6 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   BIN_NAME: snatchfreezer
-  # The frontend depends on the drazui UI library via `path = "../../drazui"`,
-  # so it is checked out next to this repository.
-  DRAZUI_REPO: guidobonerz/drazui
 
 jobs:
   build:
@@ -40,14 +37,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: snatchfreezer
-
-      - name: Checkout drazui
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.DRAZUI_REPO }}
-          path: drazui
-          # Only needed if drazui is a private repository.
-          token: ${{ secrets.DRAZUI_TOKEN || github.token }}
 
       - name: Install Rust toolchain
         run: |

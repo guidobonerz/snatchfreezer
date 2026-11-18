@@ -35,7 +35,8 @@ Future plans:
 
 
 # Build the Frontend
-The frontend uses the drazui UI library, which is expected next to this repository (`../drazui`).
+The frontend uses the [drazui](https://github.com/guidobonerz/drazui) UI library, which cargo fetches from GitHub
+automatically. The exact commit is pinned in `frontend/Cargo.lock`; run `cargo update -p drazui` to pull a newer one.
 
 ```
 cd frontend

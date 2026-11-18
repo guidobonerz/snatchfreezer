@@ -5,7 +5,7 @@ edition = "2021"
 description = "Frontend of the Snatchfreezer high speed photography controller"
 
 [dependencies]
-drazui = { path = "../../drazui" }
+drazui = { git = "https://github.com/guidobonerz/drazui" }
 minifb = "0.29"
 rfd = "0.15"
 serde = { version = "1", features = ["derive"] }
